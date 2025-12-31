@@ -4,56 +4,56 @@ from dataclasses import dataclass
 import random
 import torch
 import numpy as np
+import datetime  # 补充缺失的导入
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class GRPOConfig:
-    """GRPO 配置类，支持从YAML加载"""
-    # 默认值 (如果yaml中缺失会使用这些值)
-    model_name: str = "Qwen/Qwen1.5-1.5B"
-    
-    # lora 配置
+    # 1. 模型配置
+    model_name: str = "Qwen/Qwen2-1.5B-Instruct"
     use_lora: bool = True
-    lora_r: int = 16
-    lora_alpha: int = 32
+    lora_r: int = 64
+    lora_alpha: int = 128
     lora_dropout: float = 0.05
-
-    # 量化配置
-    use_8bit: bool = False
+    
+    # 2. 显存与精度
+    use_8bit: bool = False    
     use_4bit: bool = False
-
-    # 训练配置
-    learning_rate: float = 5e-6
-    batch_size: int = 2
-    num_epochs: int = 3
-    max_length: int = 512
-    max_new_tokens: int = 256
-
-    # GRPO 算法配置
-    num_samples_per_prompt: int = 4
-    temperature: float = 0.8
-    beta: float = 0.1
-    gamma: float = 1.0
-
-    # 其他训练配置
-    gradient_accumulation_steps: int = 8
-    max_grad_norm: float = 1.0
     gradient_checkpointing: bool = True
     fp16: bool = True
-
-    # 设备和随机种子配置
     device: str = "cuda"
-    seed: int = 42
-    output_dir: str = "./outputs/grpo_qwen_4090"
-    save_steps: int = 200
-    logging_steps: int = 10
-
-    # 数据配置
+    
+    # 3. 训练超参数 (追求速度与稳定)
+    learning_rate: float = 1e-5
+    batch_size: int = 8
+    # 保持总步长等效：原 4*1 -> 现 1*4
+    gradient_accumulation_steps: int = 4
+    num_epochs: int = 3
+    max_length: int = 1024
+    max_new_tokens: int = 512
+    
+    # 4. GRPO 核心参数
+    # [建议] 设为 8，GRPO 需要一定数量的样本来计算基线。
+    # BS=1 时，1*8 = 8条序列，24GB 显存处理 1.5B 模型完全足够。
+    num_samples_per_prompt: int = 4
+    temperature: float = 0.9
+    beta: float = 0.04
+    gamma: float = 1.0
+    
+    # 5. 补充缺失的字段（解决load_yaml传入报错）
     max_samples: int = 500
-    train_split: float = 0.9
+    train_split: str = "train"
     num_workers: int = 4
+    
+    max_grad_norm: float = 1.0
+    seed: int = 42
+    output_dir: str = f"./outputs/grpo_fix_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    save_steps: int = 100
+    logging_steps: int = 5
+    eval_steps: int = 50
+    dataset_name: str = "HuggingFaceH4/MATH-500"
 
     @classmethod
     def load_yaml(cls, yaml_path: str):
@@ -91,20 +91,23 @@ class GRPOConfig:
             beta=cfg['grpo']['beta'],
             gamma=cfg['grpo']['gamma'],
 
-            # Data
+            # Data（补充缺失字段的传入）
             max_samples=cfg['data']['max_samples'],
             train_split=cfg['data']['train_split'],
             num_workers=cfg['data']['num_workers'],
 
-            # System
+            # System（补充eval_steps传入）
             seed=cfg['system']['seed'],
             device=cfg['system']['device'],
             output_dir=cfg['system']['output_dir'],
             save_steps=cfg['system']['save_steps'],
             logging_steps=cfg['system']['logging_steps'],
+            eval_steps=cfg['system']['eval_steps']  # 补充缺失的eval_steps传入
         )
 
-    def set_seed(seed: int):
+    # 修正：添加self参数，作为实例方法
+    def set_seed(self, seed: int = None):
+        seed = seed or self.seed
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
