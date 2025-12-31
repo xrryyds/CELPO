@@ -54,6 +54,8 @@ class GRPOConfig:
     logging_steps: int = 5
     eval_steps: int = 50
     dataset_name: str = "HuggingFaceH4/MATH-500"
+    
+    thinking_max_tokens = 512
 
     @classmethod
     def load_yaml(cls, yaml_path: str):
@@ -102,7 +104,9 @@ class GRPOConfig:
             output_dir=cfg['system']['output_dir'],
             save_steps=cfg['system']['save_steps'],
             logging_steps=cfg['system']['logging_steps'],
-            eval_steps=cfg['system']['eval_steps']  # 补充缺失的eval_steps传入
+            eval_steps=cfg['system']['eval_steps'],  # 补充缺失的eval_steps传入
+            
+            thinking_max_tokens = cfg['thinking']['max_tokens']
         )
 
     # 修正：添加self参数，作为实例方法
