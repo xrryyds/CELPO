@@ -1,4 +1,7 @@
 pyyaml==6.0.1
 numpy==1.26.4
 torch==2.4.1
-datasets
+transformers>=4.30.0
+datasets>=2.13.0  # 用于数据加载（代码中虽未直接显示，但data_math可能依赖）
+peft>=0.4.0       # 用于LoRA微调
+tqdm>=4.65.0
