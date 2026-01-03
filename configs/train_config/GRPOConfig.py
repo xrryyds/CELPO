@@ -1,8 +1,6 @@
 import logging
 import yaml
 from dataclasses import dataclass
-import random
-import torch
 import numpy as np
 import datetime  # 补充缺失的导入
 
@@ -21,7 +19,7 @@ class GRPOConfig:
     # 2. 显存与精度
     use_8bit: bool = False    
     use_4bit: bool = False
-    gradient_checkpointing: bool = True
+    gradient_checkpointing: bool = False
     fp16: bool = True
     device: str = "cuda"
     
@@ -108,12 +106,3 @@ class GRPOConfig:
             
             thinking_max_tokens = cfg['thinking']['max_tokens']
         )
-
-    # 修正：添加self参数，作为实例方法
-    def set_seed(self, seed: int = None):
-        seed = seed or self.seed
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(seed)
