@@ -1,4 +1,6 @@
 import os
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True' 
 import gc
 import json
 import logging
@@ -18,8 +20,6 @@ from metric import GRPOMathReward
 from data_math import Math_500, math_500_collate_fn
 
 # ==================== 环境变量设置 ====================
-os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
-os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True' 
 # ==================== 日志设置 ====================
 logging.basicConfig(
     level=logging.INFO,
