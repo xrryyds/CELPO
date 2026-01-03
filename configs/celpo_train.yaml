@@ -2,12 +2,12 @@
 
 # 模型相关配置
 model:
-  name: "Qwen/Qwen1.5-1.5B"    # 基础模型路径或名称
+  name: "Qwen/Qwen2-1.5B-Instruct"    # 基础模型路径或名称
   max_length: 512              # 输入最大长度
   max_new_tokens: 256          # 生成最大长度
   # 量化配置 (开启8bit可节省显存，但略微降低速度)
   quantization:
-    use_8bit: false
+    use_8bit: true
     use_4bit: false
 
 # LoRA 微调配置 (显存优化核心)
@@ -20,16 +20,16 @@ lora:
 # 训练超参数
 training:
   learning_rate: 5.0e-6        # 学习率 (注意yaml中科学计数法的写法)
-  batch_size: 2                # 4090上设为2-4，配合梯度累积
+  batch_size: 2             # 4090上设为2-4，配合梯度累积
   gradient_accumulation_steps: 8 # 累积步数，实际batch = 2 * 8 = 16
-  num_epochs: 3
+  num_epochs: 10
   max_grad_norm: 1.0
   gradient_checkpointing: true # 必须开启以节省显存
   fp16: true                   # 开启混合精度
 
 # GRPO 算法特定参数
 grpo:
-  num_samples_per_prompt: 4    # 每个Prompt采样的回复数
+  num_samples_per_prompt: 4   # 每个Prompt采样的回复数
   temperature: 0.8
   beta: 0.1                    # KL散度惩罚系数
   gamma: 1.0                   # 优势归一化系数
@@ -37,7 +37,7 @@ grpo:
 # 数据集配置
 data:
   max_samples: 500             # 调试时设小一点，正式训练设大
-  train_split: 0.9
+  train_split: ""
   num_workers: 4
 
 # 系统与日志
@@ -46,9 +46,10 @@ system:
   device: "cuda"
   output_dir: "./outputs/grpo_qwen"
   save_steps: 200
-  logging_steps: 10
+  logging_steps: 5
+  eval_steps: 50
 
 
 thinking:
-  max_tokens: 512
+  thinking_max_tokens: 512
 

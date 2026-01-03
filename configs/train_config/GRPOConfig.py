@@ -12,8 +12,8 @@ class GRPOConfig:
     # 1. 模型配置
     model_name: str = "Qwen/Qwen2-1.5B-Instruct"
     use_lora: bool = True
-    lora_r: int = 64
-    lora_alpha: int = 128
+    lora_r: int = 16
+    lora_alpha: int = 32
     lora_dropout: float = 0.05
     
     # 2. 显存与精度
@@ -24,11 +24,11 @@ class GRPOConfig:
     device: str = "cuda"
     
     # 3. 训练超参数 (追求速度与稳定)
-    learning_rate: float = 1e-5
-    batch_size: int = 8
+    learning_rate: float = 1e-6
+    batch_size: int = 2
     # 保持总步长等效：原 4*1 -> 现 1*4
     gradient_accumulation_steps: int = 4
-    num_epochs: int = 3
+    num_epochs: int = 10
     max_length: int = 1024
     max_new_tokens: int = 512
     
@@ -37,13 +37,13 @@ class GRPOConfig:
     # BS=1 时，1*8 = 8条序列，24GB 显存处理 1.5B 模型完全足够。
     num_samples_per_prompt: int = 4
     temperature: float = 0.9
-    beta: float = 0.04
+    beta: float = 0.05
     gamma: float = 1.0
     
     # 5. 补充缺失的字段（解决load_yaml传入报错）
     max_samples: int = 500
     train_split: str = "train"
-    num_workers: int = 4
+    num_workers: int = 1
     
     max_grad_norm: float = 1.0
     seed: int = 42
@@ -53,7 +53,7 @@ class GRPOConfig:
     eval_steps: int = 50
     dataset_name: str = "HuggingFaceH4/MATH-500"
     
-    thinking_max_tokens = 512
+    thinking_max_tokens: int = 512
 
     @classmethod
     def load_yaml(cls, yaml_path: str):
@@ -96,13 +96,12 @@ class GRPOConfig:
             train_split=cfg['data']['train_split'],
             num_workers=cfg['data']['num_workers'],
 
-            # System（补充eval_steps传入）
             seed=cfg['system']['seed'],
             device=cfg['system']['device'],
             output_dir=cfg['system']['output_dir'],
             save_steps=cfg['system']['save_steps'],
             logging_steps=cfg['system']['logging_steps'],
-            eval_steps=cfg['system']['eval_steps'],  # 补充缺失的eval_steps传入
+            eval_steps=cfg['system']['eval_steps'], 
             
-            thinking_max_tokens = cfg['thinking']['max_tokens']
+            thinking_max_tokens = cfg['thinking']['thinking_max_tokens']
         )
