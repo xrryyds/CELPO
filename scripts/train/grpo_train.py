@@ -70,7 +70,8 @@ class GRPOTrainer:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=config.learning_rate)
         self.reward_fn = GRPOMathReward()
         
-        self.train_dataset, self.eval_dataset = Math_500.get_dataset()
+        math_500 = Math_500(config)
+        self.train_dataset, self.eval_dataset = math_500.get_dataset()
         
         self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=math_500_collate_fn)
         self.eval_loader = DataLoader(self.eval_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=math_500_collate_fn)

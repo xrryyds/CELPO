@@ -47,3 +47,8 @@ system:
   output_dir: "./outputs/grpo_qwen"
   save_steps: 200
   logging_steps: 10
+
+
+thinking:
+  max_tokens: 512
+
