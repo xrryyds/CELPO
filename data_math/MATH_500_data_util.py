@@ -47,7 +47,7 @@ class Math_500:
                 problems.append(problem)
                 solutions.append(solution)
                 answers.append(answer)
-        return problems, solutions, answers, len(problem)
+        return problems, solutions, answers, len(problems)
 
     def gen_prompt(self,data: list, max_token: int = 512):
         for i in range(len(data)):
