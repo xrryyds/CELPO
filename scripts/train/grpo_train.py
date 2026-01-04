@@ -17,7 +17,8 @@ import random
 from loggers import TrainingLogger
 from peft import get_peft_model, LoraConfig, TaskType
 from metric import GRPOMathReward
-from data_math import Math_500, math_500_collate_fn
+from data_math import Math_500
+from utils import collate_fn
 
 # ==================== 环境变量设置 ====================
 # ==================== 日志设置 ====================
@@ -73,8 +74,8 @@ class GRPOTrainer:
         math_500 = Math_500(config)
         self.train_dataset, self.eval_dataset = math_500.get_dataset()
         
-        self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=math_500_collate_fn)
-        self.eval_loader = DataLoader(self.eval_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=math_500_collate_fn)
+        self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn)
+        self.eval_loader = DataLoader(self.eval_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
         self.global_step = 0
 
     @torch.no_grad()
