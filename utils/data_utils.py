@@ -18,5 +18,10 @@ def normalize_answer(answer: str) -> str:
     answer = re.sub(r'[^0-9a-zA-Z\+\-\*/=\.\,]', '', answer)
     return answer
 
+def collate_fn(batch):
+    return {
+            'prompts': [item['prompt'] for item in batch],
+            'reference_solutions': [item['reference_solution'] for item in batch]
+            }
 
 

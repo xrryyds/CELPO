@@ -98,14 +98,6 @@ class Math_500_DataSet():
             'reference_solution': self.solutions[idx]
         }
     
-def math_500_collate_fn(batch):
-    return {
-            'prompts': [item['prompt'] for item in batch],
-            'reference_solutions': [item['reference_solution'] for item in batch]
-            }
-
-    
-    
 def main():
    gms8k = GSM8K(config=GRPOConfig)
    train_problems, train_solutions, train_answers = gms8k.get_data()
