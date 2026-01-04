@@ -1,0 +1,59 @@
+# GRPO模型推理配置文件
+
+# 模型配置
+model:
+  # 训练好的模型路径（必须修改为实际路径）
+  model_path: "../outputs/grpo_qwen/final_model"
+  # 基础模型名称
+  base_model: "Qwen/Qwen2-1.5B-Instruct"
+  # 是否使用LoRA
+  use_lora: true
+  # LoRA配置（如果use_lora为true）
+
+lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+
+# 推理参数
+inference:
+  # 输入最大长度
+  max_length: 2048
+  # 生成最大长度
+  max_new_tokens: 4096
+  # 温度参数（控制随机性，0.1-1.0）
+  temperature: 0.8
+  # Top-p采样参数
+  top_p: 0.9
+  # Top-k采样参数
+  top_k: 50
+  # 返回序列数量
+  num_return_sequences: 1
+  # 设备设置
+  device: "cuda"  # 或 "cpu"
+
+# 数据集评估配置
+evaluation:
+  # 数据集名称
+  dataset_name: "HuggingFaceH4/MATH-500"
+  # 评估分割（train/test）
+  split: "test"
+  # 最大评估样本数（设为0表示评估全部）
+  max_samples: 100
+
+# 输出配置
+output:
+  # 结果保存路径
+  results_path: "./inference_results.json"
+  save_detailed_log: true
+  # 日志文件路径
+  log_path: "./inference_log.txt"
+
+# 性能优化配置
+optimization:
+  # 批处理大小
+  batch_size: 4
+  # 是否启用梯度检查点（推理时通常关闭）
+  gradient_checkpointing: false
+  # 混合精度推理
+  fp16: true

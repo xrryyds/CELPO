@@ -1,5 +1,7 @@
-from .train import *
+from .train import GRPOTrainer
+from .Inference import GRPOInference
 
 __all__= [
-    "GRPOTrainer"
+    "GRPOTrainer",
+    "GRPOInference"
 ]
