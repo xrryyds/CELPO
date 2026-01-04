@@ -3,13 +3,12 @@ from typing import Optional
 import prompt
 
 def extract_answer(text: str) -> Optional[str]:
-    pattern = r'\\boxed\{([^}]+)\}'
-    matches = re.findall(pattern, text)
-    if matches: return matches[-1].strip()
-    patterns = [r'[Tt]he answer is:?\s*([^\n\.]+)', r'[Ff]inal answer:?\s*([^\n\.]+)', r'=\s*([^\n]+)$']
-    for pattern in patterns:
-        matches = re.findall(pattern, text)
-        if matches: return matches[-1].strip()
+    # 优先匹配 <answer>...</answer> 标签中的内容（支持换行、空格等）
+    pattern = r'<answer>\s*(.*?)\s*</answer>'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    if matches:
+        # 返回最后一个匹配项（类似原逻辑），并去除首尾空白
+        return matches[-1].strip()
     return None
 
 def normalize_answer(answer: str) -> str:
