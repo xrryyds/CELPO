@@ -14,10 +14,9 @@ from functools import lru_cache
 import time
 from peft import PeftModel, LoraConfig, TaskType
 from utils.data_utils import extract_answer,normalize_answer
-
 # 导入配置和工具
 from configs import GRPOConfig, GRPOConfigInference
-from data_math import Math_500
+from data_math import Math_500, GSM8K
 from prompt import QUESTION_PROMPT
 
 logging.basicConfig(
@@ -241,8 +240,10 @@ def main():
     for key, value in model_info.items():
         print(f"{key}: {value}")
     
-    math_500 = Math_500(config)
-    test_dataset = math_500.get_test_data()
+    # math_500 = Math_500(config)
+    # test_dataset = math_500.get_test_data()
+    gsm8k = GSM8K(config)
+    test_dataset = gsm8k.get_test_data()
     
     # 示例1: 单个推理
     print("\n" + "="*50)
