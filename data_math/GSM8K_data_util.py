@@ -4,6 +4,7 @@ from .load_dataset import LoadDataset
 from prompt import QUESTION_PROMPT, ANSWER_PROMPT
 from configs import GRPOConfig
 from sklearn.model_selection import train_test_split 
+from .math_dataset import Math_DataSet
 
 
 logger = logging.getLogger(__name__)
@@ -32,8 +33,8 @@ class GSM8K:
             shuffle=True  
         )
 
-        self.train_data =  Math_500_DataSet(self.train_problems, self.train_solutions,  self.train_answers)
-        self.test_data = Math_500_DataSet(self.test_problems, self.test_solutions, self.test_answers)
+        self.train_data =  Math_DataSet(self.train_problems, self.train_solutions,  self.train_answers)
+        self.test_data = Math_DataSet(self.test_problems, self.test_solutions, self.test_answers)
 
     def extract_data(self, dataset: Dataset) -> tuple[list, list, list, int]:
         problems = []
@@ -83,20 +84,6 @@ class GSM8K:
     
     def get_dataset(self):
         return self.train_data, self.test_data
-
-class Math_500_DataSet():
-    def __init__(self, problems, solutions ,answers):
-        self.problems = problems
-        self.solutions = solutions
-        self.answers = answers
-        
-    def __len__(self): return len(self.problems)
-    
-    def __getitem__(self, idx):
-        return {
-            'prompt': self.problems[idx],
-            'reference_solution': self.solutions[idx]
-        }
     
 def main():
    gms8k = GSM8K(config=GRPOConfig)

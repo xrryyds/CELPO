@@ -3,11 +3,30 @@ from typing import Optional
 import prompt
 
 def extract_answer(text: str) -> Optional[str]:
-    # 优先匹配 <answer>...</answer> 标签中的内容（支持换行、空格等）
     pattern = r'<answer>\s*(.*?)\s*</answer>'
     matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
     if matches:
-        # 返回最后一个匹配项（类似原逻辑），并去除首尾空白
+        return matches[-1].strip()
+    return None
+
+def extract_thinking(text: str) -> Optional[str]:
+    pattern = r'<thinking>\s*(.*?)\s*</thinking>'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    if matches:
+        return matches[-1].strip()
+    return None
+
+def extract_conclusion(text: str) -> Optional[str]:
+    pattern = r'<conclusion>\s*(.*?)\s*</conclusion>'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    if matches:
+        return matches[-1].strip()
+    return None
+
+def extract_reason(text: str) -> Optional[str]:
+    pattern = r'<reason>\s*(.*?)\s*</reason>'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    if matches:
         return matches[-1].strip()
     return None
 
