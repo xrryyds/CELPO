@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoadDataset:
-    def __init__(self, dataset_name, split, local_path):
+    def __init__(self, dataset_name, split, local_path, config=None):
         logger.info(f"Loading Dataset: {dataset_name} ({split})...")
         self.local_path = local_path
         dataset = None
@@ -15,7 +15,8 @@ class LoadDataset:
                 dataset = load_from_disk(local_path)
             else:
                 dataset = load_dataset(
-                    dataset_name,
+                    path=dataset_name,
+                    name = config,
                     split=split,
                     cache_dir="./datasets/cache" 
                 )

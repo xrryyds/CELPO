@@ -9,12 +9,13 @@ from sklearn.model_selection import train_test_split
 logger = logging.getLogger(__name__)
 
 
-class Math_500:
+class GSM8K:
     def __init__(self, config: GRPOConfig):
         dataset_loader = LoadDataset(
-            dataset_name='HuggingFaceH4/MATH-500',
-            split='test',
-            local_path='./datasets/data/MATH-500'
+            dataset_name='gsm8k',
+            split='train',
+            local_path='./datasets/data/gsm8k',
+            config='main'
         )
 
         self.problems, self.solutions, self.answers, self.data_len = self.extract_data(
@@ -40,14 +41,21 @@ class Math_500:
         answers = []
 
         for data in dataset:
-            problem = data.get("problem", None)
-            solution = data.get("solution", None)
-            answer = data.get("answer", None)
+            question = data.get("question", "").strip()
+            answer_text = data.get("answer", "").strip()
 
-            if problem and solution and answer:
-                problems.append(problem)
-                solutions.append(solution)
-                answers.append(answer)
+            if not question or not answer_text:
+                continue
+            if "####" in answer_text:
+                parts = answer_text.split("####")
+                solution_text = parts[0].strip()  
+                final_answer = parts[1].strip()   
+
+            if solution_text and final_answer:
+                problems.append(question)
+                solutions.append(solution_text)
+                answers.append(final_answer)
+
         return problems, solutions, answers, len(problems)
 
     def gen_prompt(self, data: list, max_token: int = 512):
@@ -99,8 +107,8 @@ def math_500_collate_fn(batch):
     
     
 def main():
-   math_500 = Math_500(config=GRPOConfig)
-   train_problems, train_solutions, train_answers = math_500.get_data()
+   gms8k = GSM8K(config=GRPOConfig)
+   train_problems, train_solutions, train_answers = gms8k.get_data()
    print("problems:" + train_problems[0])
    print("train_answer:" + train_answers[0])
          
