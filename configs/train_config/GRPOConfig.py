@@ -104,6 +104,6 @@ class GRPOConfig:
             logging_steps=cfg['system']['logging_steps'],
             eval_steps=cfg['system']['eval_steps'], 
             
-            thinking_max_tokens = cfg['thinking']['thinking_max_tokens']
+            thinking_max_tokens = cfg['thinking']['thinking_max_tokens'],
             top_p = cfg['training']['top_p']
         )

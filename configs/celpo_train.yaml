@@ -3,8 +3,8 @@
 # 模型相关配置
 model:
   name: "Qwen/Qwen2-1.5B-Instruct"    # 基础模型路径或名称
-  max_length: 512              # 输入最大长度
-  max_new_tokens: 256          # 生成最大长度
+  max_length: 512             # 输入最大长度
+  max_new_tokens: 512          # 生成最大长度
   # 量化配置 (开启8bit可节省显存，但略微降低速度)
   quantization:
     use_8bit: true
@@ -13,14 +13,14 @@ model:
 # LoRA 微调配置 (显存优化核心)
 lora:
   enable: true
-  r: 16                        # LoRA 秩
-  alpha: 32                    # LoRA Alpha
+  r: 8                        # LoRA 秩
+  alpha: 16                    # LoRA Alpha
   dropout: 0.05
 
 # 训练超参数
 training:
   learning_rate: 5.0e-6        # 学习率 (注意yaml中科学计数法的写法)
-  batch_size: 2             # 4090上设为2-4，配合梯度累积
+  batch_size: 6           # 4090上设为2-4，配合梯度累积
   gradient_accumulation_steps: 8 # 累积步数，实际batch = 2 * 8 = 16
   num_epochs: 10
   max_grad_norm: 1.0
