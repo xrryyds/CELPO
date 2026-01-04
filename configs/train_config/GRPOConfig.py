@@ -54,6 +54,7 @@ class GRPOConfig:
     dataset_name: str = "HuggingFaceH4/MATH-500"
     
     thinking_max_tokens: int = 512
+    top_p: float = 0.9
 
     @classmethod
     def load_yaml(cls, yaml_path: str):
@@ -104,4 +105,5 @@ class GRPOConfig:
             eval_steps=cfg['system']['eval_steps'], 
             
             thinking_max_tokens = cfg['thinking']['thinking_max_tokens']
+            top_p = cfg['training']['top_p']
         )

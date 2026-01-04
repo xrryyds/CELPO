@@ -26,6 +26,7 @@ training:
   max_grad_norm: 1.0
   gradient_checkpointing: true # 必须开启以节省显存
   fp16: true                   # 开启混合精度
+  top_p: 0.9
 
 # GRPO 算法特定参数
 grpo:

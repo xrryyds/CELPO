@@ -64,9 +64,9 @@ class GRPOTrainer:
             self.model = get_peft_model(self.model, peft_config)
             
         logger.info("Loading Reference Model...")
-        self.ref_model = AutoModelForCausalLM.from_pretrained(config.model_name, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
-        self.ref_model.eval()
-        for p in self.ref_model.parameters(): p.requires_grad = False
+        # self.ref_model = AutoModelForCausalLM.from_pretrained(config.model_name, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
+        # self.ref_model.eval()
+        # for p in self.ref_model.parameters(): p.requires_grad = False
         
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=config.learning_rate)
         self.reward_fn = GRPOMathReward()
@@ -91,20 +91,27 @@ class GRPOTrainer:
             temperature=self.config.temperature,
             do_sample=True,
             num_return_sequences=self.config.num_samples_per_prompt,
-            pad_token_id=self.tokenizer.pad_token_id
+            pad_token_id=self.tokenizer.pad_token_id,
+            # 加上 top_p 防止采样到极其离谱的词导致 log_prob 极小
+            top_p=0.9 
         )
         
-        ref_outputs = self.ref_model(outputs)
-        ref_logits = ref_outputs.logits[:, prompt_len-1:-1, :]
-        ref_log_probs = F.log_softmax(ref_logits, dim=-1)
+        # 关键修正：计算 Mask，一定要排除 Padding Token，否则 KL 和 Loss 会算错
         gen_ids = outputs[:, prompt_len:]
-        ref_token_log_probs = ref_log_probs.gather(2, gen_ids.unsqueeze(-1)).squeeze(-1).sum(dim=1)
+        completion_mask = (gen_ids != self.tokenizer.pad_token_id).int()
+
+        # 优化：使用 disable_adapter 计算 Reference Logits，不需要额外的 ref_model
+        with self.model.disable_adapter():
+            ref_outputs = self.model(outputs)
+            ref_logits = ref_outputs.logits[:, prompt_len-1:-1, :]
+            ref_log_probs = F.log_softmax(ref_logits, dim=-1)
+            # Gather 并应用 Mask
+            ref_token_log_probs = ref_log_probs.gather(2, gen_ids.unsqueeze(-1)).squeeze(-1)
+            ref_token_log_probs = ref_token_log_probs * completion_mask # Masking
+            ref_sum_log_probs = ref_token_log_probs.sum(dim=1)
         
-        with torch.no_grad():
-            policy_outputs = self.model(outputs)
-            policy_logits = policy_outputs.logits[:, prompt_len-1:-1, :]
-            policy_log_probs = F.log_softmax(policy_logits, dim=-1)
-            token_log_probs = policy_log_probs.gather(2, gen_ids.unsqueeze(-1)).squeeze(-1).sum(dim=1)
+        # 预计算 Policy Logits (用于 Experience) - 其实可以跳过，只存 ref 即可，train 时再算 policy
+        # 但为了保持逻辑一致，我们只在 Train 阶段重算 Policy
 
         trajectories = []
         texts = self.tokenizer.batch_decode(gen_ids, skip_special_tokens=True)
@@ -119,30 +126,41 @@ class GRPOTrainer:
                     'text': texts[flat_idx],
                     'ids': outputs[flat_idx].cpu(),
                     'prompt_len': prompt_len,
-                    'log_prob': token_log_probs[flat_idx].item(),
-                    'ref_log_prob': ref_token_log_probs[flat_idx].item()
+                    'ref_log_prob': ref_sum_log_probs[flat_idx].item(),
+                    # 必须保存 mask
+                    'mask': completion_mask[flat_idx].cpu()
                 })
         
-        del inputs, outputs, ref_outputs, ref_logits, policy_outputs, policy_logits, ref_log_probs, policy_log_probs, gen_ids
+        del inputs, outputs, ref_outputs, ref_logits, ref_log_probs, ref_token_log_probs
         torch.cuda.empty_cache()
         return trajectories
 
     def compute_loss(self, batch_trajectories, advantages):
         self.model.train()
         ids = torch.stack([t['ids'] for t in batch_trajectories]).to(self.config.device)
+        masks = torch.stack([t['mask'] for t in batch_trajectories]).to(self.config.device) # 加载 Mask
         prompt_len = batch_trajectories[0]['prompt_len']
-        ref_log_probs = torch.tensor([t['ref_log_prob'] for t in batch_trajectories], device=self.config.device)
+        ref_log_probs_sum = torch.tensor([t['ref_log_prob'] for t in batch_trajectories], device=self.config.device)
         advs = torch.tensor(advantages, device=self.config.device)
         
         outputs = self.model(ids)
         logits = outputs.logits[:, prompt_len-1:-1, :]
         gen_ids = ids[:, prompt_len:]
         log_probs = F.log_softmax(logits, dim=-1)
-        token_log_probs = log_probs.gather(2, gen_ids.unsqueeze(-1)).squeeze(-1).sum(dim=1)
+        token_log_probs = log_probs.gather(2, gen_ids.unsqueeze(-1)).squeeze(-1)
         
-        kl_div = token_log_probs.detach() - ref_log_probs
-        loss = - (advs * token_log_probs - self.config.beta * kl_div)
-        return loss.mean(), (-advs * token_log_probs).mean().item(), kl_div.mean().item()
+        # 关键修正：应用 Mask
+        token_log_probs = token_log_probs * masks
+        token_log_probs_sum = token_log_probs.sum(dim=1)
+        
+        # KL 计算 (Approx: log_p - log_ref)
+        kl_div = token_log_probs_sum - ref_log_probs_sum
+        
+        # 计算 Loss
+        # 限制 kl_div 防止数值爆炸 (可选，但在正确 mask 下通常不需要)
+        loss = - (advs * token_log_probs_sum - self.config.beta * kl_div)
+        
+        return loss.mean(), (-advs * token_log_probs_sum).mean().item(), kl_div.mean().item()
 
     def train_step(self, batch):
         prompts = batch['prompts']
@@ -175,10 +193,11 @@ class GRPOTrainer:
         self.model.eval()
         correct, total = 0, 0
         total_reward = 0
-        eval_batch_size = 2
+        eval_batch_size = 2 # 如果显存不够可以调小
         
         logger.info("Evaluating...")
-        indices = list(range(min(20, len(self.eval_loader.dataset))))
+        # 减少评估数量以加快速度
+        indices = list(range(min(10, len(self.eval_loader.dataset))))
         eval_subset = [self.eval_loader.dataset[i] for i in indices]
         
         for i in range(0, len(eval_subset), eval_batch_size):
@@ -188,6 +207,7 @@ class GRPOTrainer:
             inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True).to(self.config.device)
             try:
                 with torch.no_grad():
+                    # do_sample=False 用于评估
                     outputs = self.model.generate(**inputs, max_new_tokens=512, do_sample=False)
                 for j, out_ids in enumerate(outputs):
                     text = self.tokenizer.decode(out_ids[inputs.input_ids.shape[1]:], skip_special_tokens=True)
@@ -228,7 +248,7 @@ class GRPOTrainer:
                 except torch.OutOfMemoryError:
                     logger.error("OOM! Reduce Batch Size to 1.")
                     torch.cuda.empty_cache()
-                    continue
+                    raise
         final_path = os.path.join(self.config.output_dir, "final_model")
         self.model.save_pretrained(final_path)
         self.tokenizer.save_pretrained(final_path)
@@ -238,6 +258,7 @@ class GRPOTrainer:
 if __name__ == "__main__":
     torch.cuda.empty_cache()
     gc.collect()
-    config = GRPOConfig()
+    config = GRPOConfig.load_yaml("/home/xrrfolder/CELPO/configs/celpo_train.yaml")
+    print(config)
     trainer = GRPOTrainer(config)
     trainer.train()
