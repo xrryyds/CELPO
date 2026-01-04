@@ -17,7 +17,7 @@ import random
 from loggers import TrainingLogger
 from peft import get_peft_model, LoraConfig, TaskType
 from metric import GRPOMathReward
-from data_math import Math_500
+from data_math import Math_500, GSM8K
 from utils import collate_fn
 
 # ==================== 环境变量设置 ====================
@@ -71,8 +71,12 @@ class GRPOTrainer:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=config.learning_rate)
         self.reward_fn = GRPOMathReward()
         
-        math_500 = Math_500(config)
-        self.train_dataset, self.eval_dataset = math_500.get_dataset()
+        # math_500 = Math_500(config)
+        # self.train_dataset, self.eval_dataset = math_500.get_dataset()
+        gsm8k = GSM8K(config)
+        self.train_dataset, self.eval_dataset = gsm8k.get_dataset()
+        logger.info("Train Dataset Size: %s", len(self.train_dataset))
+        
         
         self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn)
         self.eval_loader = DataLoader(self.eval_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)

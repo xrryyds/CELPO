@@ -225,6 +225,9 @@ class GRPOInference:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             logger.info("GPU缓存已清理")
+            
+            
+        
 
 
 def main():
