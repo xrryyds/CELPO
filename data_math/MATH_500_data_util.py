@@ -57,7 +57,7 @@ class Math_500:
             )
             
     def get_data(self):
-        return self.train_problems, self.train_solutions, self.train_answers, self.train_len
+        return self.train_problems, self.train_solutions, self.train_answers
 
 
     def get_train_data(self):
@@ -87,15 +87,16 @@ def math_500_collate_fn(batch):
     return {
             'prompts': [item['prompt'] for item in batch],
             'reference_solutions': [item['reference_solution'] for item in batch]
-            
             }
 
     
     
 def main():
    math_500 = Math_500(config=GRPOConfig)
-   train_problems, train_solutions, train_answers, train_len = math_500.get_data()
-   print(train_problems[0])
+   train_problems, train_solutions, train_answers = math_500.get_data()
+   print("problems:" + train_problems[0])
+   print("train_answer:" + train_answers[0])
+         
 
 
 if __name__ == "__main__":

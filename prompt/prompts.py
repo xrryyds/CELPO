@@ -1,4 +1,4 @@
-QUESTION_PROMPT = prompt = """Please solve the following math problem.
+QUESTION_PROMPT  = """Please solve the following math problem.
 ## Strictly adhere to the output format below:
 
 1. **Reasoning**: Wrap your step-by-step deduction process inside <thinking>...</thinking> tags. This section must not exceed {max_token} words.
@@ -20,4 +20,16 @@ Answer:
 [Final number here]
 </answer>
 
+"""
+
+ANSWER_PROMPT = """
+Thinking:
+<thinking>
+[Your derivation steps here]
+</thinking>
+
+Answer:
+<answer>
+{answer}
+</answer>
 """
