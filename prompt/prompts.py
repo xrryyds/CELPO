@@ -11,7 +11,6 @@ Problem:
 {problem_text}
 
 ## Your output must exactly match this structure:
-
 Thinking:
 <thinking>
 [Your derivation steps here]
@@ -20,6 +19,17 @@ Thinking:
 Answer:
 <answer>
 [Final number here]
+</answer>
+
+## response example:
+Thinking:
+<thinking>
+1 + 1 = 2
+</thinking>
+
+Answer:
+<answer>
+2
 </answer>
 
 # Response:
