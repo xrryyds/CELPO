@@ -226,8 +226,15 @@ class GRPOInference:
             torch.cuda.empty_cache()
             logger.info("GPU缓存已清理")
             
+    
+    def gen_data_with_inference(self, data_set: Math_DataSet, max_token: int = 512, batch_size: int = 4) -> List[Dict[str, any]]:)
+            
             
         
+
+
+
+
 
 
 def main():
@@ -248,44 +255,41 @@ def main():
     # test_dataset = math_500.get_test_data()
     gsm8k = GSM8K(config)
     test_dataset = gsm8k.get_test_data()
-    
-    # 示例1: 单个推理
-    print("\n" + "="*50)
-    print("示例1: 单个问题推理")
-    print("="*50)
-    sample_problem =  test_dataset[0]["prompt"]
-    result = inference.generate_response(
-        inference.preprocess_prompt(sample_problem)
-    )
-    
-    print(f"问题: {sample_problem}")
-    print(f"模型回答: {result['response']}")
-    print(f"提取的答案: {result['answer']}")
-    
-    # # 示例2: 批量推理
+    ######################################################################
+    # # 示例1: 单个推理
     # print("\n" + "="*50)
-    # print("示例2: 批量推理")
+    # print("示例1: 单个问题推理")
     # print("="*50)
+    # sample_problem =  test_dataset[0]["prompt"]
+    # result = inference.generate_response(
+    #     inference.preprocess_prompt(sample_problem)
+    # )
     
-    # test_problems = [
-    #     "计算 1+2+3+...+100 的和",
-    #     "求圆的面积，半径为5",
-    #     "解方程: 2x + 3 = 7"
-    # ]
+    # print(f"问题: {sample_problem}")
+    # print(f"模型回答: {result['response']}")
+    # print(f"提取的答案: {result['answer']}")
+    ######################################################################
+    # 示例2: 批量推理
+    print("\n" + "="*50)
+    print("示例2: 批量推理")
+    print("="*50)
     
-    # batch_results = inference.batch_inference(test_problems, batch_size=2)
+    test_problems = test_dataset[:]["prompt"]
     
-    # for result in batch_results:
-    #     print(f"\n问题: {result['problem']}")
-    #     print(f"答案: {result['answer']}")
-    #     if 'error' in result:
-    #         print(f"错误: {result['error']}")
+    batch_results = inference.batch_inference(test_problems, batch_size=2)
     
-    # # 示例3: 在数据集上评估
+    for idx, result in enumerate(batch_results):
+        print(f"\n问题: {result['problem']}")
+        print(f"答案: {result['answer']}")
+        print(f"参考: {test_dataset[idx]['reference_solution']}")
+        if 'error' in result:
+            print(f"错误: {result['error']}")
+    
+    ######################################################################
+    # 示例3: 在数据集上评估
     # print("\n" + "="*50)
     # print("示例3: 在MATH-500数据集上评估")
     # print("="*50)
-    
     # try:
     #     eval_results = inference.evaluate_on_dataset(
     #         dataset_name="HuggingFaceH4/MATH-500",

@@ -17,10 +17,10 @@ lora:
 
 # 推理参数
 inference:
-  # 输入最大长度
-  max_length: 2048
+  # 输入最大长度 = 训练时的 max输入 + max推理 + max输出
+  max_length: 1536
   # 生成最大长度
-  max_new_tokens: 4096
+  max_new_tokens: 1024
   # 温度参数（控制随机性，0.1-1.0）
   temperature: 0.8
   # Top-p采样参数
