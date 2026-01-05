@@ -1,7 +1,10 @@
 pyyaml==6.0.1
 numpy==1.26.4
 torch==2.4.1
-transformers>=4.30.0
+transformers==4.41.2
 datasets>=2.13.0  # 用于数据加载（代码中虽未直接显示，但data_math可能依赖）
-peft>=0.4.0       # 用于LoRA微调
+peft==0.10.0     # 用于LoRA微调
+trl==0.8.6        # 用于强化学习微调（如PPO）或SFT
+bitsandbytes>=0.41.0  # 用于4-bit/8-bit量化训练
+accelerate>=0.25.0    # 用于分布式训练和高效推理
 tqdm>=4.65.0
