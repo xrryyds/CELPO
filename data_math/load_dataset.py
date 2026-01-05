@@ -31,6 +31,12 @@ class LoadDataset:
     def __len__(self): return len(self.dataset)
     
     def get_dataset(self): return self.dataset
+    
+    def set_dataset_size(self, size: int):
+        if size > len(self.dataset):
+            logger.warning(f"Requested size {size} is larger than dataset length {len(self.dataset)}. Keeping original dataset.")
+            return
+        self.dataset = self.dataset.select(range(size))
 
 def main():
     dataset_loader = LoadDataset(
