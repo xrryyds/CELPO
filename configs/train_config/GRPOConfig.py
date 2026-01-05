@@ -55,6 +55,7 @@ class GRPOConfig:
     
     thinking_max_tokens: int = 512
     top_p: float = 0.9
+    max_samples: int = 500
 
     @classmethod
     def load_yaml(cls, yaml_path: str):

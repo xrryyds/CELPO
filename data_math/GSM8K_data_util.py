@@ -19,6 +19,8 @@ class GSM8K:
             config='main'
         )
 
+        data_size = min(config.max_samples, dataset_loader)
+        dataset_loader = dataset_loader[:data_size]
         self.problems, self.solutions, self.answers, self.data_len = self.extract_data(
             dataset_loader.get_dataset())
         self.gen_prompt(self.problems, max_token=GRPOConfig.thinking_max_tokens)
