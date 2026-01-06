@@ -12,10 +12,11 @@ class GRPOMathReward:
         ref_answer = extract_answer(reference_solution)
         thinking = extract_thinking(generated_text)
         if pred_answer is None: return self.format_error_penalty
-        reward = 0.0
+        reward = 1.0
         if normalize_answer(pred_answer) == normalize_answer(ref_answer) and ref_answer:
             reward += self.correct_reward
         else: reward += self.wrong_reward
+        reward += 0.5
         if not thinking: reward += self.no_thinking
         return reward
     
