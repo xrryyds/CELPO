@@ -31,6 +31,7 @@ inference:
   num_return_sequences: 1
   # 设备设置
   device: "cuda"  # 或 "cpu"
+  batch_size: 4
 
 # 数据集评估配置
 evaluation:
