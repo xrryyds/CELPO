@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class GSM8K(Math_data):
-    def __init__(self, config: GRPOConfig):
+    def __init__(self, config: GRPOConfig = None):
         dataset_loader = LoadDataset(
             dataset_name='gsm8k',
             split='train',
@@ -20,7 +20,7 @@ class GSM8K(Math_data):
             config='main'
         )
 
-        if config.max_samples is not None:
+        if config and config.max_samples is not None:
             total_size = len(dataset_loader)
             actual_size = min(config.max_samples, total_size)
             dataset_loader.set_dataset_size(actual_size)

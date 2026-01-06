@@ -28,7 +28,9 @@ class SftTrainer:
         # 显式设置 padding_side，防止潜在警告
         self.tokenizer.padding_side = 'right' 
 
-        self.train_dataset, self.eval_dataset = data.get_dataset()
+        train_dataset, eval_dataset = data.get_dataset()
+        self.train_dataset = train_dataset.to_hf_dataset()
+        self.eval_dataset = eval_dataset.to_hf_dataset()
         
         # 2. 加载模型 (增加 device_map 和 flash_attention)
         # 注意：使用 flash_attention_2 需要显卡支持 (Amphere架构以上)
@@ -36,7 +38,7 @@ class SftTrainer:
             self.model_id,
             torch_dtype=torch.bfloat16,
             device_map="auto", 
-            attn_implementation="flash_attention_2" # 推荐开启，显存更省，速度更快
+            # attn_implementation="flash_attention_2" # 推荐开启，显存更省，速度更快
         )
             
         self.training_arguments = TrainingArguments(
@@ -70,7 +72,7 @@ class SftTrainer:
             model=self.model,
             args=self.training_arguments,
             train_dataset=self.train_dataset,
-            eval_dataset=self.eval_dataset, # 建议加入验证集
+            eval_dataset=self.eval_dataset, 
             tokenizer=self.tokenizer,
             peft_config=self.lora_config,
             formatting_func=self.math_formatting_func,
@@ -105,12 +107,12 @@ if __name__ == "__main__":
     torch.cuda.empty_cache()
     gc.collect()
     
-    config_path = "/home/xrrfolder/CELPO/configs/celpo_train.yaml" 
+    config_path = "/home/xrrfolder/CELPO/configs/sft.yaml" 
     config = SftConfig.load_yaml(config_path)
     
     print("Loaded Config:", config)
     
-    gsm8k = GSM8K(config) 
+    gsm8k = GSM8K() 
     
     trainer = SftTrainer(config, gsm8k)
     trainer.train()
