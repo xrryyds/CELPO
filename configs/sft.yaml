@@ -1,0 +1,31 @@
+# ================= SFT 训练配置 (基于 Qwen2-1.5B) =================
+
+# 模型相关配置
+model:
+  name: "Qwen/Qwen2-1.5B-Instruct"    # model_name
+  max_seq_length: 1024        # max_seq_length: 输入序列最大长度
+
+# LoRA 微调配置
+lora:
+  r: 8                        # lora_r: LoRA 秩
+  alpha: 16                   # lora_alpha: LoRA Alpha
+  bias: "none"                # bias
+  task_type: "CAUSAL_LM"      # task_type
+
+# 训练超参数
+training:
+  learning_rate: 1.0e-5       # learning_rate
+  batch_size: 1               # per_device_train_batch_size: 单卡 Batch Size
+  gradient_accumulation_steps: 4 # 实际 Batch Size = 1 * 4 * GPU数
+  num_epochs: 1               # num_train_epochs
+  max_grad_norm: 1.0          # 梯度裁剪阈值
+  warmup_ratio: 0.05          # 预热比例
+  lr_scheduler_type: "cosine" # 学习率调度器
+  bf16: true                  # bf16: 开启 BFloat16 混合精度 (需硬件支持)
+
+# 系统与日志
+system:
+  output_dir: "/home/xrrfolder/CELPO/outputs/sft" # output_dir
+  save_steps: 50              # 每 50 步保存一次 checkpoints
+  logging_steps: 10           # 每 10 步打印一次日志
+  report_to: "none"           # 不上报到 wandb 等平台
