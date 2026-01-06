@@ -32,7 +32,7 @@ Answer:
 2
 </answer>
 
-# Response:
+## Please answer below:
 """
 
 ANSWER_PROMPT = """
@@ -79,4 +79,9 @@ Please strictly adhere to the following XML format for your evaluation:
 2. **<reason>**:
    - If the conclusion is **YES**, simply write: "Correct".
    - If the conclusion is **NO**, concisely explain the specific reason for rejection (e.g., "Calculation error in step 2", "Final answer is wrong", or "Logic does not follow the problem conditions").
+"""
+
+JUDGER_GEN_REASON_PROMPT= """
+
+<reason>{reason}</reason>
 """

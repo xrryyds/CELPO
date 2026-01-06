@@ -226,15 +226,8 @@ class GRPOInference:
             torch.cuda.empty_cache()
             logger.info("GPU缓存已清理")
             
-    
-    def gen_data_with_inference(self, data_set: Math_DataSet, max_token: int = 512, batch_size: int = 4) -> List[Dict[str, any]]:)
-            
             
         
-
-
-
-
 
 
 def main():
@@ -256,34 +249,36 @@ def main():
     gsm8k = GSM8K(config)
     test_dataset = gsm8k.get_test_data()
     ######################################################################
-    # # 示例1: 单个推理
-    # print("\n" + "="*50)
-    # print("示例1: 单个问题推理")
-    # print("="*50)
-    # sample_problem =  test_dataset[0]["prompt"]
-    # result = inference.generate_response(
-    #     inference.preprocess_prompt(sample_problem)
-    # )
+    # 示例1: 单个推理
+    print("\n" + "="*50)
+    print("示例1: 单个问题推理")
+    print("="*50)
+    sample_problem =  test_dataset[0]["prompt"]
+    ref_answer = test_dataset[0]["reference_solution"]
+    result = inference.generate_response(
+        inference.preprocess_prompt(sample_problem)
+    )
     
-    # print(f"问题: {sample_problem}")
-    # print(f"模型回答: {result['response']}")
-    # print(f"提取的答案: {result['answer']}")
+    print(f"问题: {sample_problem}")
+    print(f"模型回答: {result['response']}")
+    print(f"提取的答案: {result['answer']}")
+    print(f"参考答案: {ref_answer}")
     ######################################################################
     # 示例2: 批量推理
-    print("\n" + "="*50)
-    print("示例2: 批量推理")
-    print("="*50)
+    # print("\n" + "="*50)
+    # print("示例2: 批量推理")
+    # print("="*50)
     
-    test_problems = test_dataset[:]["prompt"]
+    # test_problems = test_dataset[:]["prompt"]
     
-    batch_results = inference.batch_inference(test_problems, batch_size=2)
+    # batch_results = inference.batch_inference(test_problems, batch_size=2)
     
-    for idx, result in enumerate(batch_results):
-        print(f"\n问题: {result['problem']}")
-        print(f"答案: {result['answer']}")
-        print(f"参考: {test_dataset[idx]['reference_solution']}")
-        if 'error' in result:
-            print(f"错误: {result['error']}")
+    # for idx, result in enumerate(batch_results):
+    #     print(f"\n问题: {result['problem']}")
+    #     print(f"答案: {result['answer']}")
+    #     print(f"参考: {test_dataset[idx]['reference_solution']}")
+    #     if 'error' in result:
+    #         print(f"错误: {result['error']}")
     
     ######################################################################
     # 示例3: 在数据集上评估

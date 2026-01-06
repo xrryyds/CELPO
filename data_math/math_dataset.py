@@ -11,4 +11,28 @@ class Math_DataSet():
             'prompt': self.problems[idx],
             'reference_solution': self.answers[idx]
         }
+        
+        
+class Math_DataSet_Judge():
+    def __init__(self, problems, solutions ,answers, conclusion, reason, flag: bool=True):
+        self.problems = problems
+        self.solutions = solutions
+        self.answers = answers
+        self.conclusion = conclusion
+        self.reason = reason
+        self.flag = flag
+        
+    def __len__(self): return len(self.problems)
     
+    ########
+    def __getitem__(self, idx):
+        return {
+            'prompt': self.problems[idx],
+            'reference_solution': self.answers[idx]
+        }
+        
+    def gen_incor_reason(self):
+        if self.flag:
+            return
+        else:
+            ## call gtp
