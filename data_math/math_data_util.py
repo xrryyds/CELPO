@@ -1,47 +1,85 @@
-from datasets import Dataset 
-class Math_DataSet():
-    def __init__(self, problems, solutions ,answers):
-        self.problems = problems
-        self.solutions = solutions
-        self.answers = answers
-        
-    def __len__(self): return len(self.problems)
-    
-    def __getitem__(self, idx):
-        return {
-            'prompt': self.problems[idx],
-            'reference_solution': self.answers[idx]
-        }
+import logging
+from datasets import Dataset
+from .load_dataset import LoadDataset
+from prompt import QUESTION_PROMPT, ANSWER_PROMPT
+from configs import GRPOConfig
+from sklearn.model_selection import train_test_split 
+from .math_dataset import Math_DataSet
 
-    def to_hf_dataset(self):
-        return Dataset.from_dict({
-            'prompt': self.problems,
-            'reference_solution': self.answers,
-            # 'solution': self.solutions 
-        })
+class Math_data():
+    def __init__(self, config: GRPOConfig):
+        dataset_loader = LoadDataset(
+            dataset_name='',
+            split='',
+            local_path=''
+        )
+
+
+        if config.max_samples is not None:
+            total_size = len(dataset_loader)
+            actual_size = min(config.max_samples, total_size)
+            dataset_loader.set_dataset_size(actual_size)
+
+
+
+        self.problems, self.solutions, self.answers, self.data_len = self.extract_data(
+            dataset_loader.get_dataset())
+
+
+        self.gen_prompt(self.problems, max_token=GRPOConfig.thinking_max_tokens)
+        self.gen_answer(self.answers)
         
-        
-class Math_DataSet_Judge():
-    def __init__(self, problems, solutions ,answers, conclusion, reason, flag: bool=True):
-        self.problems = problems
-        self.solutions = solutions
-        self.answers = answers
-        self.conclusion = conclusion
-        self.reason = reason
-        self.flag = flag
-        
-    def __len__(self): return len(self.problems)
+        (self.train_problems, self.test_problems,
+         self.train_solutions, self.test_solutions,
+         self.train_answers, self.test_answers) = train_test_split(
+            self.problems, self.solutions, self.answers,
+            test_size=0.2, 
+            random_state=42,  
+            shuffle=True  
+        )
+
+        self.train_data =  Math_DataSet(self.train_problems, self.train_solutions,  self.train_answers)
+        self.test_data = Math_DataSet(self.test_problems, self.test_solutions, self.test_answers)
+
+    def extract_data(self, dataset: Dataset) -> tuple[list, list, list, int]:
+        problems = []
+        solutions = []
+        answers = []
+
+        for data in dataset:
+            problem = data.get("problem", None)
+            solution = data.get("solution", None)
+            answer = data.get("answer", None)
+
+            if problem and solution and answer:
+                problems.append(problem)
+                solutions.append(solution)
+                answers.append(answer)
+        return problems, solutions, answers, len(problems)
+
+    def gen_prompt(self, data: list, max_token: int = 512):
+        for i in range(len(data)):
+            data[i] = QUESTION_PROMPT.format(
+                max_token=max_token,
+                problem_text=data[i]
+            )
+            
+    def gen_answer(self, data: list):
+        for i in range(len(data)):
+            data[i] = ANSWER_PROMPT.format(
+                answer = data[i]
+            )
+            
+    def get_data(self):
+        return self.train_problems, self.train_solutions, self.train_answers
+
+
+    def get_train_data(self):
+        return self.train_data
     
-    ########
-    def __getitem__(self, idx):
-        return {
-            'prompt': self.problems[idx],
-            'reference_solution': self.answers[idx]
-        }
-        
-    def gen_incor_reason(self):
-        if self.flag:
-            return
-        else:
-            ## call gtp
-            return
+    def get_test_data(self):
+        return self.test_data
+    
+    def get_dataset(self):
+        return self.train_data, self.test_data
+    
