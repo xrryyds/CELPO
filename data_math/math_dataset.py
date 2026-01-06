@@ -1,3 +1,4 @@
+from datasets import Dataset 
 class Math_DataSet():
     def __init__(self, problems, solutions ,answers):
         self.problems = problems
@@ -11,6 +12,13 @@ class Math_DataSet():
             'prompt': self.problems[idx],
             'reference_solution': self.answers[idx]
         }
+
+    def to_hf_dataset(self):
+        return Dataset.from_dict({
+            'prompt': self.problems,
+            'reference_solution': self.answers,
+            # 'solution': self.solutions 
+        })
         
         
 class Math_DataSet_Judge():
