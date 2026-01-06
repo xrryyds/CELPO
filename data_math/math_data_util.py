@@ -5,20 +5,18 @@ from prompt import QUESTION_PROMPT, ANSWER_PROMPT
 from configs import GRPOConfig
 from sklearn.model_selection import train_test_split 
 from .math_dataset import Math_DataSet
-from .math_data_util import Math_data
 
 
 logger = logging.getLogger(__name__)
 
 
-class Math_500(Math_data):
+class Math_data:
     def __init__(self, config: GRPOConfig):
         dataset_loader = LoadDataset(
-            dataset_name='HuggingFaceH4/MATH-500',
-            split='test',
-            local_path='./datasets/data/MATH-500'
+            dataset_name='',
+            split='',
+            local_path=''
         )
-
 
         if config.max_samples is not None:
             total_size = len(dataset_loader)
@@ -88,13 +86,3 @@ class Math_500(Math_data):
     def get_dataset(self):
         return self.train_data, self.test_data
     
-def main():
-   math_500 = Math_500(config=GRPOConfig)
-   train_problems, train_solutions, train_answers = math_500.get_data()
-   print("problems:" + train_problems[0])
-   print("train_answer:" + train_answers[0])
-         
-
-
-if __name__ == "__main__":
-    main()

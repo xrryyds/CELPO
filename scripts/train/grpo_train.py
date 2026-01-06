@@ -21,7 +21,7 @@ from peft import get_peft_model, LoraConfig, TaskType
 from configs import GRPOConfig
 from loggers import TrainingLogger
 from metric import GRPOMathReward
-from data_math import GSM8K # 仅使用 GSM8K 或 Math_500
+from data_math import GSM8K, Math_data
 from utils import collate_fn
 
 # ==================== 日志设置 ====================
@@ -41,9 +41,10 @@ class GRPOTrainer:
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
             
-    def __init__(self, config: GRPOConfig):
+    def __init__(self, config: GRPOConfig, data: Math_data):
         self.config = config
         self.set_seed(config.seed)
+        self.data = data
         self.logger_backend = TrainingLogger(config.output_dir)
         
         # 创建输出目录
@@ -89,8 +90,7 @@ class GRPOTrainer:
         self.reward_fn = GRPOMathReward()
         
         # ================== 数据集加载 ==================
-        gsm8k = GSM8K(config)
-        self.train_dataset, self.eval_dataset = gsm8k.get_dataset()
+        self.train_dataset, self.eval_dataset = data.get_dataset()
         logger.info(f"Train Dataset Size: {len(self.train_dataset)}")
         logger.info(f"Eval Dataset Size: {len(self.eval_dataset)}")
         
@@ -342,11 +342,12 @@ if __name__ == "__main__":
     torch.cuda.empty_cache()
     gc.collect()
     
+    
     # 加载配置
     config_path = "/home/xrrfolder/CELPO/configs/celpo_train.yaml" 
     config = GRPOConfig.load_yaml(config_path)
     
     print("Loaded Config:", config)
-    
-    trainer = GRPOTrainer(config)
+    gsm8k = GSM8K(config)
+    trainer = GRPOTrainer(config, gsm8k)
     trainer.train()

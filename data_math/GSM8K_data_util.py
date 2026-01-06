@@ -5,12 +5,13 @@ from prompt import QUESTION_PROMPT, ANSWER_PROMPT
 from configs import GRPOConfig
 from sklearn.model_selection import train_test_split 
 from .math_dataset import Math_DataSet
+from .math_data_util import Math_data
 
 
 logger = logging.getLogger(__name__)
 
 
-class GSM8K:
+class GSM8K(Math_data):
     def __init__(self, config: GRPOConfig):
         dataset_loader = LoadDataset(
             dataset_name='gsm8k',
