@@ -11,7 +11,6 @@ class Math_DataSet():
         return {
             'prompt': self.problems[idx],
             'reference_solution': self.answers[idx],
-            'solution': self.solutions[idx]
         }
 
     def to_hf_dataset(self):
