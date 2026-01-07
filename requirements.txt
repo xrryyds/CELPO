@@ -8,3 +8,4 @@ trl==0.8.6        # 用于强化学习微调（如PPO）或SFT
 bitsandbytes>=0.41.0  # 用于4-bit/8-bit量化训练
 accelerate>=0.25.0    # 用于分布式训练和高效推理
 tqdm>=4.65.0
+matplotlib

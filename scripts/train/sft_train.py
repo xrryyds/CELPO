@@ -1,14 +1,70 @@
 import os
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-
+import json
+import numpy as np
 import torch
+import gc
+import matplotlib.pyplot as plt # 用于后续画图演示
 from datasets import load_dataset
 from peft import LoraConfig
-from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM # 引入DataCollator
+from transformers import (
+    AutoTokenizer, 
+    AutoModelForCausalLM, 
+    TrainingArguments, 
+    TrainerCallback
+)
+from trl import SFTTrainer, DataCollatorForCompletionOnlyLM 
 from configs import SftConfig
 from data_math import Math_data, GSM8K
-import gc
+
+# 设置环境
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
+# --- 新增功能 1: 自定义回调函数，用于收集数据画图 ---
+class SaveMetricsCallback(TrainerCallback):
+    def __init__(self, output_dir):
+        self.log_history = []
+        self.output_dir = output_dir
+        self.json_path = os.path.join(output_dir, "training_logs.json")
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            # 记录当前的 step, loss, eval_loss, accuracy 等信息
+            log_entry = logs.copy()
+            log_entry['step'] = state.global_step
+            log_entry['epoch'] = state.epoch
+            self.log_history.append(log_entry)
+            
+            # 实时写入文件，防止程序中断数据丢失
+            with open(self.json_path, 'w', encoding='utf-8') as f:
+                json.dump(self.log_history, f, indent=4)
+
+# --- 新增功能 2: 计算准确率 (Token-level Accuracy) ---
+# 注意：这是预测下一个Token的准确率，并非整道题的逻辑准确率，但作为训练过程的监控指标非常有参考价值
+def compute_metrics(eval_preds):
+    preds, labels = eval_preds
+    # preds 是 logits，通常很大，我们需要 argmax 得到 token id
+    # 注意：为了节省显存，SFTTrainer 有时会只传回 logits 的 tuple
+    if isinstance(preds, tuple):
+        preds = preds[0]
+    
+    # 将 logits 转换为 token id
+    pred_ids = np.argmax(preds, axis=-1)
+    
+    # 忽略 label 中的 -100 (padding)
+    mask = labels != -100
+    
+    # 计算准确率
+    correct = (pred_ids[mask] == labels[mask]).sum()
+    total = mask.sum()
+    
+    accuracy = correct / total if total > 0 else 0.0
+    return {"accuracy": accuracy}
+
+# 预处理 Logits 以节省显存 (配合 compute_metrics 使用)
+def preprocess_logits_for_metrics(logits, labels):
+    if isinstance(logits, tuple):
+        logits = logits[0]
+    return logits.argmax(dim=-1)
 
 class SftTrainer:
     def __init__(self, config: SftConfig, data: Math_data):
@@ -18,37 +74,42 @@ class SftTrainer:
         
         # 1. 加载 Tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
-        
-        # 修正 Padding 设置
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-            # 某些模型可能需要设置 pad_token_id
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-        
-        # 显式设置 padding_side，防止潜在警告
         self.tokenizer.padding_side = 'right' 
 
         train_dataset, eval_dataset = data.get_dataset()
-        print(len(train_dataset.problems))
+        print(f"训练集样本数: {len(train_dataset.problems)}")
         self.train_dataset = train_dataset.to_hf_dataset()
         self.eval_dataset = eval_dataset.to_hf_dataset()
-
         
-        # 2. 加载模型 (增加 device_map 和 flash_attention)
-        # 注意：使用 flash_attention_2 需要显卡支持 (Amphere架构以上)
+        # 2. 加载模型
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
             torch_dtype=torch.bfloat16,
             device_map="auto", 
-            # attn_implementation="flash_attention_2" # 推荐开启，显存更省，速度更快
         )
             
+        # 3. 配置 TrainingArguments (核心修改部分)
         self.training_arguments = TrainingArguments(
             output_dir=self.output_dir,
             bf16=config.bf16,
             per_device_train_batch_size=config.per_device_train_batch_size,
             gradient_accumulation_steps=config.gradient_accumulation_steps,
-            save_steps=config.save_steps,       
+            
+            # --- 验证与保存策略修改 ---
+            eval_strategy="steps",           # 必须设置为 steps 才能在训练中验证
+            eval_steps=config.save_steps,    # 每隔多少步验证一次 (建议与 save_steps 一致)
+            save_strategy="steps",           # 每隔多少步保存一次
+            save_steps=config.save_steps,
+            
+            # --- 最佳模型保存机制 ---
+            load_best_model_at_end=True,     # 训练结束时加载最好的模型
+            metric_for_best_model="accuracy",# 依据准确率判定最好 (也可以填 "eval_loss")
+            greater_is_better=True,          # 准确率越高越好 (如果是 loss 则设为 False)
+            save_total_limit=2,              # 最多只保留2个checkpoint，节省空间
+            
             logging_steps=config.logging_steps,
             learning_rate=config.learning_rate,
             max_grad_norm=config.max_grad_norm,
@@ -56,9 +117,8 @@ class SftTrainer:
             warmup_ratio=config.warmup_ratio,
             lr_scheduler_type=config.lr_scheduler_type,
             report_to=config.report_to,
-            # 必须开启下列选项以确保 padding 不参与 loss 计算
             gradient_checkpointing=True, 
-            group_by_length=True, # 将长度相似的样本分在一组，提高训练效率
+            group_by_length=True,
         )
         
         self.lora_config = LoraConfig(
@@ -69,26 +129,35 @@ class SftTrainer:
             task_type=config.task_type,
         )
 
-
+        # 4. 初始化 Trainer
         self.trainer = SFTTrainer(
             model=self.model,
             args=self.training_arguments,
             train_dataset=self.train_dataset,
-            eval_dataset=self.eval_dataset, 
+            eval_dataset=self.eval_dataset, # 必须传入 eval_dataset
             tokenizer=self.tokenizer,
             peft_config=self.lora_config,
             formatting_func=self.math_formatting_func,
             max_seq_length=config.max_seq_length,
             packing=False,
+            
+            # --- 注入指标计算与回调 ---
+            compute_metrics=compute_metrics, 
+            preprocess_logits_for_metrics=preprocess_logits_for_metrics, # 显存优化
+            callbacks=[SaveMetricsCallback(self.output_dir)] # 注入记录数据的回调
         )
 
     def train(self):
         print("开始训练...")
-        self.trainer.train()
-        save_path = os.path.join(self.output_dir, "final_model")
+        # resume_from_checkpoint=True 如果中断了可以恢复
+        self.trainer.train() 
+        
+        # 此时 self.trainer.model 已经是 load_best_model_at_end 加载的参数了
+        save_path = os.path.join(self.output_dir, "best_model_final")
         self.trainer.save_model(save_path)
         self.tokenizer.save_pretrained(save_path)
-        print(f"训练完成，模型已保存至: {save_path}")
+        print(f"训练完成。准确率最高的模型已保存至: {save_path}")
+        print(f"绘图数据已保存至: {os.path.join(self.output_dir, 'training_logs.json')}")
 
     def math_formatting_func(self, examples):
         output_texts = []
@@ -105,26 +174,72 @@ class SftTrainer:
             output_texts.append(text)
         return output_texts
 
+# --- 辅助函数：画图脚本 (训练结束后运行) ---
+def plot_training_results(log_file_path):
+    if not os.path.exists(log_file_path):
+        print("Log file not found.")
+        return
+
+    with open(log_file_path, 'r') as f:
+        logs = json.load(f)
+
+    # 提取数据
+    steps = []
+    train_loss = []
+    eval_steps = []
+    eval_loss = []
+    eval_acc = []
+
+    for entry in logs:
+        if 'loss' in entry and 'step' in entry:
+            steps.append(entry['step'])
+            train_loss.append(entry['loss'])
+        if 'eval_loss' in entry:
+            eval_steps.append(entry['step'])
+            eval_loss.append(entry['eval_loss'])
+        if 'eval_accuracy' in entry:
+            eval_acc.append(entry['eval_accuracy'])
+
+    # 创建图表
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # 绘制 Loss (左轴)
+    ax1.set_xlabel('Steps')
+    ax1.set_ylabel('Loss', color='tab:red')
+    ax1.plot(steps, train_loss, label='Training Loss', color='tab:red', alpha=0.6)
+    ax1.plot(eval_steps, eval_loss, label='Validation Loss', color='tab:orange', linestyle='--')
+    ax1.tick_params(axis='y', labelcolor='tab:red')
+
+    # 绘制 Accuracy (右轴)
+    if eval_acc:
+        ax2 = ax1.twinx() 
+        ax2.set_ylabel('Accuracy', color='tab:blue')
+        ax2.plot(eval_steps, eval_acc, label='Validation Accuracy', color='tab:blue', linewidth=2)
+        ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+    plt.title('Training Metrics: Loss & Accuracy')
+    fig.tight_layout()
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    
+    # 保存图片
+    plot_path = log_file_path.replace('.json', '.png')
+    plt.savefig(plot_path, dpi=300)
+    print(f"图表已保存为: {plot_path}")
+
 if __name__ == "__main__":
     torch.cuda.empty_cache()
     gc.collect()
     
     config_path = "/home/xrrfolder/CELPO/configs/sft.yaml" 
+
     config = SftConfig.load_yaml(config_path)
     
     print("Loaded Config:", config)
     
     gsm8k = GSM8K() 
     
-    train_dataset, eval_dataset = gsm8k.get_dataset()
-    train_dataset = train_dataset.to_hf_dataset()
-    eval_dataset = eval_dataset.to_hf_dataset()
-    sample = train_dataset[0]
-    print(sample['prompt'])
-    print(sample['reference_solution'])
-
-
     trainer = SftTrainer(config, gsm8k)
-    dataset = trainer.math_formatting_func(train_dataset)
     trainer.train()
-
+    
+    # 训练结束后自动画图
+    plot_training_results(os.path.join(config.output_dir, "training_logs.json"))
