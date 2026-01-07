@@ -3,7 +3,7 @@ import json
 import numpy as np
 import torch
 import gc
-import matplotlib.pyplot as plt # 用于后续画图演示
+import matplotlib.pyplot as plt 
 from datasets import load_dataset
 from peft import LoraConfig
 from transformers import (
@@ -19,7 +19,7 @@ from data_math import Math_data, GSM8K
 # 设置环境
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
-# --- 新增功能 1: 自定义回调函数，用于收集数据画图 ---
+# --- 功能 1: 自定义回调函数，用于收集数据画图 ---
 class SaveMetricsCallback(TrainerCallback):
     def __init__(self, output_dir):
         self.log_history = []
@@ -38,22 +38,29 @@ class SaveMetricsCallback(TrainerCallback):
             with open(self.json_path, 'w', encoding='utf-8') as f:
                 json.dump(self.log_history, f, indent=4)
 
-# --- 新增功能 2: 计算准确率 (Token-level Accuracy) ---
-# 注意：这是预测下一个Token的准确率，并非整道题的逻辑准确率，但作为训练过程的监控指标非常有参考价值
+# --- 功能 2: 计算准确率 (修复版) ---
 def compute_metrics(eval_preds):
     preds, labels = eval_preds
-    # preds 是 logits，通常很大，我们需要 argmax 得到 token id
-    # 注意：为了节省显存，SFTTrainer 有时会只传回 logits 的 tuple
+    
+    # SFTTrainer 有时返回 tuple (logits, past_key_values)
     if isinstance(preds, tuple):
         preds = preds[0]
     
-    # 将 logits 转换为 token id
-    pred_ids = np.argmax(preds, axis=-1)
+    # 【关键修复】
+    # 这里的 preds 已经是 preprocess_logits_for_metrics 处理过的 Token ID 了
+    # 所以千万不要再做 np.argmax(preds, axis=-1)，否则维度会变成 (Batch,) 导致报错
+    pred_ids = preds 
+    
+    # 【安全措施】强制展平 (Batch, Seq_Len) -> (Batch * Seq_Len)
+    # 这样可以忽略 Batch 维度的影响，直接比较所有 Token
+    pred_ids = pred_ids.reshape(-1)
+    labels = labels.reshape(-1)
     
     # 忽略 label 中的 -100 (padding)
     mask = labels != -100
     
     # 计算准确率
+    # 此时 pred_ids[mask] 和 labels[mask] 都是 1维 数组，完全对齐
     correct = (pred_ids[mask] == labels[mask]).sum()
     total = mask.sum()
     
@@ -61,6 +68,7 @@ def compute_metrics(eval_preds):
     return {"accuracy": accuracy}
 
 # 预处理 Logits 以节省显存 (配合 compute_metrics 使用)
+# 这个函数在 GPU 上运行，负责把巨大的 Logits 转成 ID
 def preprocess_logits_for_metrics(logits, labels):
     if isinstance(logits, tuple):
         logits = logits[0]
@@ -91,24 +99,24 @@ class SftTrainer:
             device_map="auto", 
         )
             
-        # 3. 配置 TrainingArguments (核心修改部分)
+        # 3. 配置 TrainingArguments
         self.training_arguments = TrainingArguments(
             output_dir=self.output_dir,
             bf16=config.bf16,
             per_device_train_batch_size=config.per_device_train_batch_size,
             gradient_accumulation_steps=config.gradient_accumulation_steps,
             
-            # --- 验证与保存策略修改 ---
-            eval_strategy="steps",           # 必须设置为 steps 才能在训练中验证
-            eval_steps=config.save_steps,    # 每隔多少步验证一次 (建议与 save_steps 一致)
-            save_strategy="steps",           # 每隔多少步保存一次
+            # --- 验证与保存策略 ---
+            eval_strategy="steps",           
+            eval_steps=config.save_steps,    
+            save_strategy="steps",           
             save_steps=config.save_steps,
             
             # --- 最佳模型保存机制 ---
-            load_best_model_at_end=True,     # 训练结束时加载最好的模型
-            metric_for_best_model="accuracy",# 依据准确率判定最好 (也可以填 "eval_loss")
-            greater_is_better=True,          # 准确率越高越好 (如果是 loss 则设为 False)
-            save_total_limit=2,              # 最多只保留2个checkpoint，节省空间
+            load_best_model_at_end=True,     
+            metric_for_best_model="accuracy",
+            greater_is_better=True,          
+            save_total_limit=2,              
             
             logging_steps=config.logging_steps,
             learning_rate=config.learning_rate,
@@ -134,7 +142,7 @@ class SftTrainer:
             model=self.model,
             args=self.training_arguments,
             train_dataset=self.train_dataset,
-            eval_dataset=self.eval_dataset, # 必须传入 eval_dataset
+            eval_dataset=self.eval_dataset, 
             tokenizer=self.tokenizer,
             peft_config=self.lora_config,
             formatting_func=self.math_formatting_func,
@@ -143,16 +151,14 @@ class SftTrainer:
             
             # --- 注入指标计算与回调 ---
             compute_metrics=compute_metrics, 
-            preprocess_logits_for_metrics=preprocess_logits_for_metrics, # 显存优化
-            callbacks=[SaveMetricsCallback(self.output_dir)] # 注入记录数据的回调
+            preprocess_logits_for_metrics=preprocess_logits_for_metrics, 
+            callbacks=[SaveMetricsCallback(self.output_dir)]
         )
 
     def train(self):
         print("开始训练...")
-        # resume_from_checkpoint=True 如果中断了可以恢复
         self.trainer.train() 
         
-        # 此时 self.trainer.model 已经是 load_best_model_at_end 加载的参数了
         save_path = os.path.join(self.output_dir, "best_model_final")
         self.trainer.save_model(save_path)
         self.tokenizer.save_pretrained(save_path)
@@ -174,7 +180,7 @@ class SftTrainer:
             output_texts.append(text)
         return output_texts
 
-# --- 辅助函数：画图脚本 (训练结束后运行) ---
+# --- 辅助函数：画图脚本 ---
 def plot_training_results(log_file_path):
     if not os.path.exists(log_file_path):
         print("Log file not found.")
@@ -183,7 +189,6 @@ def plot_training_results(log_file_path):
     with open(log_file_path, 'r') as f:
         logs = json.load(f)
 
-    # 提取数据
     steps = []
     train_loss = []
     eval_steps = []
@@ -200,17 +205,14 @@ def plot_training_results(log_file_path):
         if 'eval_accuracy' in entry:
             eval_acc.append(entry['eval_accuracy'])
 
-    # 创建图表
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    # 绘制 Loss (左轴)
     ax1.set_xlabel('Steps')
     ax1.set_ylabel('Loss', color='tab:red')
     ax1.plot(steps, train_loss, label='Training Loss', color='tab:red', alpha=0.6)
     ax1.plot(eval_steps, eval_loss, label='Validation Loss', color='tab:orange', linestyle='--')
     ax1.tick_params(axis='y', labelcolor='tab:red')
 
-    # 绘制 Accuracy (右轴)
     if eval_acc:
         ax2 = ax1.twinx() 
         ax2.set_ylabel('Accuracy', color='tab:blue')
@@ -221,7 +223,6 @@ def plot_training_results(log_file_path):
     fig.tight_layout()
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    # 保存图片
     plot_path = log_file_path.replace('.json', '.png')
     plt.savefig(plot_path, dpi=300)
     print(f"图表已保存为: {plot_path}")
@@ -241,5 +242,4 @@ if __name__ == "__main__":
     trainer = SftTrainer(config, gsm8k)
     trainer.train()
     
-    # 训练结束后自动画图
     plot_training_results(os.path.join(config.output_dir, "training_logs.json"))
