@@ -2,7 +2,6 @@ import os
 # 设置环境变量，加速下载和显存分配
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True' 
-
 import gc
 import json
 import logging
@@ -32,6 +31,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ==================== Trainer ====================
+
+
+MY_TOKEN = "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" 
 class GRPOTrainer:
     def set_seed(self, seed: int = None):
         seed = seed or self.config.seed
@@ -56,7 +58,7 @@ class GRPOTrainer:
             
         # ================== 模型与Tokenizer加载 ==================
         logger.info(f"Loading Tokenizer: {config.model_name}")
-        self.tokenizer = AutoTokenizer.from_pretrained(config.model_name, trust_remote_code=True, padding_side='left')
+        self.tokenizer = AutoTokenizer.from_pretrained(config.model_name, trust_remote_code=True, padding_side='left', token = MY_TOKEN)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
             
@@ -64,8 +66,9 @@ class GRPOTrainer:
         self.model = AutoModelForCausalLM.from_pretrained(
             config.model_name, 
             torch_dtype=torch.float16, 
-            device_map="auto", 
-            trust_remote_code=True
+            device_map="cuda:0", 
+            trust_remote_code=True,
+            token = MY_TOKEN
         )
         
         if config.gradient_checkpointing:
