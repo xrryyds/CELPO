@@ -10,14 +10,14 @@ class Math_DataSet():
     def __getitem__(self, idx):
         return {
             'prompt': self.problems[idx],
-            'reference_solution': self.answers[idx]
+            'reference_solution': self.answers[idx],
+            'solution': self.solutions[idx]
         }
 
     def to_hf_dataset(self):
         return Dataset.from_dict({
             'prompt': self.problems,
-            'reference_solution': self.answers,
-            # 'solution': self.solutions 
+            'reference_solution': self.answers
         })
         
         

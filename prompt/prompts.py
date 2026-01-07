@@ -21,24 +21,13 @@ Answer:
 [Final number here]
 </answer>
 
-## response example:
-Thinking:
-<thinking>
-1 + 1 = 2
-</thinking>
-
-Answer:
-<answer>
-2
-</answer>
-
 ## Please answer below:
 """
 
 ANSWER_PROMPT = """
 Thinking:
 <thinking>
-[Your derivation steps here]
+{thinking}
 </thinking>
 
 Answer:

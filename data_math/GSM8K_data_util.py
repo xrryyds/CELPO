@@ -29,7 +29,7 @@ class GSM8K(Math_data):
         self.problems, self.solutions, self.answers, self.data_len = self.extract_data(
             dataset_loader.get_dataset())
         self.gen_prompt(self.problems, max_token=GRPOConfig.thinking_max_tokens)
-        self.gen_answer(self.answers)
+        self.gen_answer(self.answers, self.solutions)
         
         (self.train_problems, self.test_problems,
          self.train_solutions, self.test_solutions,
@@ -73,10 +73,11 @@ class GSM8K(Math_data):
                 problem_text=data[i]
             )
             
-    def gen_answer(self, data: list):
-        for i in range(len(data)):
-            data[i] = ANSWER_PROMPT.format(
-                answer = data[i]
+    def gen_answer(self, answer: list, solution: list):
+        for i in range(len(answer)):
+            answer[i] = ANSWER_PROMPT.format(
+                thinking = solution[i],
+                answer = answer[i]
             )
             
     def get_data(self):
