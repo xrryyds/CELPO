@@ -3,7 +3,7 @@
 # 模型配置
 model:
   # 训练好的模型路径（必须修改为实际路径）
-  model_path: "../outputs/grpo_qwen/final_model"
+  model_path: "../outputs/sft/final_model"
   # 基础模型名称
   # base_model: "Qwen/Qwen2-1.5B-Instruct"
   base_model: "/home/xrrfolder/models/Qwen2-1.5B-Instruct" 
@@ -12,8 +12,8 @@ model:
   # LoRA配置（如果use_lora为true）
 
 lora:
-    r: 16
-    alpha: 32
+    r: 8
+    alpha: 16
     dropout: 0.05
 
 # 推理参数

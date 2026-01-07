@@ -29,8 +29,10 @@ class SftTrainer:
         self.tokenizer.padding_side = 'right' 
 
         train_dataset, eval_dataset = data.get_dataset()
+        print(len(train_dataset.problems))
         self.train_dataset = train_dataset.to_hf_dataset()
         self.eval_dataset = eval_dataset.to_hf_dataset()
+
         
         # 2. 加载模型 (增加 device_map 和 flash_attention)
         # 注意：使用 flash_attention_2 需要显卡支持 (Amphere架构以上)
@@ -117,6 +119,7 @@ if __name__ == "__main__":
     train_dataset, eval_dataset = gsm8k.get_dataset()
     train_dataset = train_dataset.to_hf_dataset()
     eval_dataset = eval_dataset.to_hf_dataset()
+    sample = train_dataset[0]
 
     trainer = SftTrainer(config, gsm8k)
     dataset = trainer.math_formatting_func(train_dataset)
