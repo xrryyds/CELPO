@@ -1,5 +1,6 @@
 import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ['HF_TOKEN'] = "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"
 
 import torch
 from datasets import load_dataset
@@ -114,6 +115,11 @@ if __name__ == "__main__":
     
     gsm8k = GSM8K() 
     
+    train_dataset, eval_dataset = gsm8k.get_dataset()
+    train_dataset = train_dataset.to_hf_dataset()
+    eval_dataset = eval_dataset.to_hf_dataset()
+
     trainer = SftTrainer(config, gsm8k)
+    dataset = trainer.math_formatting_func(train_dataset)
     trainer.train()
 

@@ -2,7 +2,8 @@
 
 # 模型相关配置
 model:
-  name: "Qwen/Qwen2-1.5B-Instruct"    # model_name
+  # name: "Qwen/Qwen2-1.5B-Instruct" 
+  name: "/home/xrrfolder/models/Qwen2-1.5B-Instruct" 
   max_seq_length: 1024        # max_seq_length: 输入序列最大长度
 
 # LoRA 微调配置
