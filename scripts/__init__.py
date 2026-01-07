@@ -1,5 +1,5 @@
 from .train import GRPOTrainer
-from .Inference import GRPOInference
+from .inference import GRPOInference
 
 __all__= [
     "GRPOTrainer",
