@@ -3,7 +3,7 @@
 # 模型配置
 model:
   # 训练好的模型路径（必须修改为实际路径）
-  model_path: "../outputs/sft/final_model"
+  model_path: "/home/xrrfolder/CELPO/outputs/sft/final_model" 
   # 基础模型名称
   # base_model: "Qwen/Qwen2-1.5B-Instruct"
   base_model: "/home/xrrfolder/models/Qwen2-1.5B-Instruct" 

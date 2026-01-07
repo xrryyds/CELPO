@@ -120,6 +120,9 @@ if __name__ == "__main__":
     train_dataset = train_dataset.to_hf_dataset()
     eval_dataset = eval_dataset.to_hf_dataset()
     sample = train_dataset[0]
+    print(sample['prompt'])
+    print(sample['reference_solution'])
+
 
     trainer = SftTrainer(config, gsm8k)
     dataset = trainer.math_formatting_func(train_dataset)
