@@ -3,7 +3,7 @@
 # 模型相关配置
 model:
   # name: "Qwen/Qwen2-1.5B-Instruct" 
-  name: "/home/xrrfolder/models/Qwen2-1.5B-Instruct" 
+  name: "/home/xrrfolder/models/Qwen2.5-3B-Instruct" 
   max_seq_length: 1024        # max_seq_length: 输入序列最大长度
 
 # LoRA 微调配置
@@ -16,7 +16,7 @@ lora:
 # 训练超参数
 training:
   learning_rate: 1.0e-5       # learning_rate
-  batch_size: 8               # per_device_train_batch_size: 单卡 Batch Size
+  batch_size: 2               # per_device_train_batch_size: 单卡 Batch Size
   gradient_accumulation_steps: 4 
   num_epochs: 3               # num_train_epochs
   max_grad_norm: 1.0          # 梯度裁剪阈值
