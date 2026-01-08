@@ -3,7 +3,7 @@
 # 模型相关配置
 model:
   # name: "Qwen/Qwen2-1.5B-Instruct"    
-  name: "/home/xrrfolder/models/Qwen2-1.5B-Instruct" 
+  name: "/home/xrrfolder/models/Qwen2.5-3B-Instruct" 
   max_length: 512             # 输入最大长度
   max_new_tokens: 512          # 生成最大长度
   # 量化配置 (开启8bit可节省显存，但略微降低速度)

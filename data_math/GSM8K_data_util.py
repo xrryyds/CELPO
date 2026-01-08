@@ -54,17 +54,25 @@ class GSM8K(Math_data):
 
             if not question or not answer_text:
                 continue
+            
+            # 初始化为空，防止读取上一轮的数据
+            solution_text = None
+            final_answer = None
+
             if "####" in answer_text:
                 parts = answer_text.split("####")
-                solution_text = parts[0].strip()  
-                final_answer = parts[1].strip()   
+                if len(parts) >= 2: # 增加安全性检查，防止 split 后长度不足
+                    solution_text = parts[0].strip()  
+                    final_answer = parts[1].strip()   
 
+            # 只有当本次循环成功提取到内容时才追加
             if solution_text and final_answer:
                 problems.append(question)
                 solutions.append(solution_text)
                 answers.append(final_answer)
 
         return problems, solutions, answers, len(problems)
+
 
     def gen_prompt(self, data: list, max_token: int = 512):
         for i in range(len(data)):
