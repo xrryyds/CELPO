@@ -7,9 +7,9 @@ class GRPOMathReward:
         self.format_error_penalty = -2.0
         self.no_thinking = -1.0
         
-    def __call__(self, generated_text: str, reference_solution: str) -> float:
+    def __call__(self, generated_text: str, reference_answer: str) -> float:
         pred_answer = extract_answer(generated_text)
-        ref_answer = extract_answer(reference_solution)
+        ref_answer = extract_answer(reference_answer)
         thinking = extract_thinking(generated_text)
         if pred_answer is None: return self.format_error_penalty
         reward = 1.0

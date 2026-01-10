@@ -74,3 +74,14 @@ JUDGER_GEN_REASON_PROMPT= """
 
 <reason>{reason}</reason>
 """
+
+
+
+GEN_ENHANCE_PROMPT= """
+Answer the questions with reference to the given hints.
+# Hints:
+{hints}
+# Question:
+{question}
+"""
+

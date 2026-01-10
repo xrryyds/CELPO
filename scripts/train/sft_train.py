@@ -167,7 +167,7 @@ class SftTrainer:
 
     def math_formatting_func(self, examples):
         output_texts = []
-        for prompt, ref_sol in zip(examples["prompt"], examples["reference_solution"]):
+        for prompt, ref_sol in zip(examples["prompt"], examples["reference_answer"]):
             messages = [
                 {"role": "user", "content": prompt},  
                 {"role": "assistant", "content": ref_sol}  

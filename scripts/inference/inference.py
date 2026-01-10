@@ -230,13 +230,13 @@
 #      def evaluate_dataset(self, dataset: List[Dict], batch_size: int = 4) -> Dict[str, float]:
 #         """
 #         在指定数据集上评估准确率
-#         dataset: 包含 'prompt' 和 'reference_solution' 的字典列表
+#         dataset: 包含 'prompt' 和 'reference_answer' 的字典列表
 #         """
 #         logger.info(f"开始评估数据集，样本数: {len(dataset)}")
         
 #         # 1. 提取所有问题
 #         problems = [data["prompt"] for data in dataset]
-#         references = [data["reference_solution"] for data in dataset]
+#         references = [data["reference_answer"] for data in dataset]
         
 #         # 2. 批量推理获取模型输出
 #         # 注意：这里使用 batch_inference 以提高速度
@@ -254,7 +254,7 @@
 #             ref_answer = references[i]
             
 #             # 这里的逻辑非常关键：
-#             # 有些数据集的 reference_solution 是完整的解答过程（包含 #### 答案），
+#             # 有些数据集的 reference_answer 是完整的解答过程（包含 #### 答案），
 #             # 有些则是直接的答案。为了保险，尝试先提取，提取不到则当做纯答案处理。
 #             ref_extracted = extract_answer(ref_answer)
 #             if not ref_extracted:
@@ -309,7 +309,7 @@
 #     # print("示例1: 单个问题推理")
 #     # print("="*50)
 #     # sample_problem =  test_dataset[0]["prompt"]
-#     # ref_answer = test_dataset[0]["reference_solution"]
+#     # ref_answer = test_dataset[0]["reference_answer"]
 #     # result = inference.generate_response(
 #     #     inference.preprocess_prompt(sample_problem)
 #     # )
@@ -330,7 +330,7 @@
 #     # for idx, result in enumerate(batch_results):
 #     #     print(f"\n问题: {result['problem']}")
 #     #     print(f"答案: {result['answer']}")
-#     #     print(f"参考: {test_dataset[idx]['reference_solution']}")
+#     #     print(f"参考: {test_dataset[idx]['reference_answer']}")
 #     #     if 'error' in result:
 #     #         print(f"错误: {result['error']}")
     
@@ -629,13 +629,13 @@ class GRPOInference:
     def evaluate_dataset(self, dataset: List[Dict], batch_size: int = 4) -> Dict[str, float]:
         """
         在指定数据集上评估准确率
-        dataset: 包含 'prompt' 和 'reference_solution' 的字典列表
+        dataset: 包含 'prompt' 和 'reference_answer' 的字典列表
         """
         logger.info(f"开始评估数据集，样本数: {len(dataset)}")
         
         # 1. 提取所有问题
         problems = [data["prompt"] for data in dataset]
-        references = [data["reference_solution"] for data in dataset]
+        references = [data["reference_answer"] for data in dataset]
         
         # 2. 批量推理获取模型输出
         results = self.batch_inference(problems, batch_size=batch_size)

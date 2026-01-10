@@ -194,7 +194,7 @@ class GRPOTrainer:
 
     def train_step(self, batch):
         prompts = batch['prompts']
-        solutions = batch['reference_solutions']
+        solutions = batch['reference_answers']
         
         # 1. 采样 + 计算 Ref Logprobs
         trajectories = self.generate_trajectory_parallel(prompts)
@@ -248,7 +248,7 @@ class GRPOTrainer:
         for i in range(0, len(eval_subset), eval_batch_size):
             batch_items = eval_subset[i:i+eval_batch_size]
             prompts = [item['prompt'] for item in batch_items]
-            refs = [item['reference_solution'] for item in batch_items]
+            refs = [item['reference_answer'] for item in batch_items]
             
             inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True).to(self.config.device)
             try:

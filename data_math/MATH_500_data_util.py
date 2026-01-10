@@ -31,8 +31,8 @@ class Math_500(Math_data):
             dataset_loader.get_dataset())
 
 
-        self.gen_prompt(self.problems, max_token=GRPOConfig.thinking_max_tokens)
-        self.gen_answer(self.answers)
+        # self.gen_prompt(self.problems, max_token=GRPOConfig.thinking_max_tokens)
+        # self.gen_answer()
         
         (self.train_problems, self.test_problems,
          self.train_solutions, self.test_solutions,
@@ -69,30 +69,22 @@ class Math_500(Math_data):
                 problem_text=data[i]
             )
             
-    def gen_answer(self, data: list):
-        for i in range(len(data)):
-            data[i] = ANSWER_PROMPT.format(
-                answer = data[i]
-            )
-            
-    def get_data(self):
-        return self.train_problems, self.train_solutions, self.train_answers
-
-
-    def get_train_data(self):
-        return self.train_data
-    
-    def get_test_data(self):
-        return self.test_data
-    
-    def get_dataset(self):
-        return self.train_data, self.test_data
     
 def main():
-   math_500 = Math_500(config=GRPOConfig)
-   train_problems, train_solutions, train_answers = math_500.get_data()
-   print("problems:" + train_problems[0])
-   print("train_answer:" + train_answers[0])
+    math_500 = Math_500(config=GRPOConfig)
+    train_data = math_500.get_train_data()
+
+    spilt = "=============================="
+
+
+    print("problems:" + train_data.problems[0])
+    print(spilt)
+    print("train_answer:" + train_data.solutions[0])
+    print(spilt)
+    train_data.enhance_data[0] = "pi = 3.14, the area of a circle is pi*r^2."
+    train_data.gen_enhance_prompt()
+
+    print("enhance_prompt:" + train_data.problems[0])
          
 
 
