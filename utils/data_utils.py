@@ -40,7 +40,7 @@ def normalize_answer(answer: str) -> str:
 def collate_fn(batch):
     return {
             'prompts': [item['prompt'] for item in batch],
-            'reference_solutions': [item['reference_solution'] for item in batch]
+            'reference_answers': [item['reference_answer'] for item in batch]
             }
 
 

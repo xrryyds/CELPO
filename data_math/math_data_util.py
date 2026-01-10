@@ -64,10 +64,11 @@ class Math_data():
                 problem_text=data[i]
             )
             
-    def gen_answer(self, data: list):
-        for i in range(len(data)):
-            data[i] = ANSWER_PROMPT.format(
-                answer = data[i]
+    def gen_answer(self):
+        for i in range(len(self.answers)):
+            self.answers[i] = ANSWER_PROMPT.format(
+                answer = self.answers[i],
+                thinking = self.solutions[i]
             )
             
     def get_data(self):

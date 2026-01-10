@@ -209,7 +209,7 @@ print(f"正确: {eval_results['correct']}/{eval_results['total']}")
       "model_answer": "模型答案",
       "is_correct": true,
       "model_response": "模型回答",
-      "reference_solution": "标准解答"
+      "reference_answer": "标准解答"
     },
     ...
   ]
