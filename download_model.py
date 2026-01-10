@@ -8,8 +8,8 @@ MY_TOKEN = ""
 
 print("开始下载模型...")
 snapshot_download(
-    repo_id="Qwen/Qwen2.5-3B-Instruct",
-    local_dir="/home/xrrfolder/models/Qwen2.5-3B-Instruct",
+    repo_id="internlm/OREAL-7B",
+    local_dir="/home/xrrfolder/models/internlm/OREAL-7B",
     max_workers=8,
     token=MY_TOKEN  # <--- 加上这一行
 )
