@@ -76,6 +76,7 @@ JUDGER_GEN_REASON_PROMPT= """
 """
 
 
+#############################################################################################
 
 GEN_ENHANCE_PROMPT= """
 Answer the questions with reference to the given hints.
@@ -83,5 +84,53 @@ Answer the questions with reference to the given hints.
 {hints}
 # Question:
 {question}
+"""
+
+
+TEACHER_CORRECT_PROMPT = """
+**Role:** Heuristic Logic Mentor & Knowledge Bridge
+
+**Task:**
+Your task is to analyze the **Student's Solution** in comparison to the **Reference Answer**. Instead of acting as a simple grader, you must identify the specific **missing logical link** or **knowledge gap** that prevents the student from reaching the correct conclusion.
+
+**Goal:**
+Provide the student with the necessary "Knowledge Hints" so that, based on their existing correct reasoning, they can bridge the gap and solve the problem themselves.
+
+**Critical Constraints for Hints:**
+1.  **Universal Knowledge Only:** Hints must be provided as **general problem-solving methods, formulas, theorems, or definitions** (e.g., "Recall the formula for the area of a circle: $S = \pi r^2$" or "Use the derivatives of trigonometric functions: $(sin x)' = cos x$").
+2.  **No Specific Calculations:** Do not calculate the result for the specific numbers in the problem. Provide the *tool*, not the *answer*.
+3.  **Targeted:** The hint must directly address the specific step where the student's logic broke down or stopped.
+
+# Problem:
+{problem}
+
+# Student's Answer:
+{student_answer}
+
+# Reference Answer:
+{reference_solution}
+
+**Output Format, respond in the following XML format::**
+<Logic Gap Analysis>
+[Briefly explain what specific concept or step the student missed.]
+</Logic Gap Analysis>
+
+<hints>
+[Provide the general formula, theorem, or principle. Use LaTeX for math expressions.]
+1. ...
+2. ...
+</hints>
+
+**Example:**
+*   **Student's Error:** Calculated probability as $P(A)+P(B)$ but events were not mutually exclusive.
+*   **Your Output:**
+<Logic Gap Analysis>
+The student directly sums the two probabilities but ignores the possibility that these two events may occur simultaneously (i.e., they are not mutually exclusive).
+</Logic Gap Analysis>
+
+<hints>
+1. **Inclusion-Exclusion Principle**: For any two events $A$ and $B$, the formula for the probability of their union is $P(A \cup B) = P(A) + P(B) - P(A \cap B)$.
+</hints>
+
 """
 

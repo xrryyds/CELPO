@@ -2,6 +2,15 @@ import re
 from typing import Optional
 import prompt
 
+
+def extract_hints(text: str) -> Optional[str]:
+    pattern = r'<hints>\s*(.*?)\s*</hints>'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    if matches:
+        return matches[-1].strip()
+    return None
+
+
 def extract_answer(text: str) -> Optional[str]:
     pattern = r'<answer>\s*(.*?)\s*</answer>'
     matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
