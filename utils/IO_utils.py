@@ -6,9 +6,9 @@ class FileIOUtils:
         self.mistake_file_path = mistake_file_path
         self.hints_file_path = hints_file_path
         self.data = []
-        self.hints_data = []
+        self.mistakes = []
     
-    def load(self) -> bool:
+    def load_exam(self) -> bool:
         try:
             with open(self.exam_file_path, 'r', encoding='utf-8') as f:
                 self.data = json.load(f)
@@ -17,8 +17,18 @@ class FileIOUtils:
             print(f"load fail: {e}")
             return False
         
-    def parse_data(self):
-        size = len(self.data)
+
+    def load_mistakes(self) -> bool:
+        try:
+            with open(self.mistake_file_path, 'r', encoding='utf-8') as f:
+                self.mistakes = json.load(f)
+            return True
+        except Exception as e:
+            print(f"load fail: {e}")
+            return False
+        
+    def parse_data(self, data: list):
+        size = len(data)
         question = [] * size
         answer = [] * size
         ref_answer = [] * size
@@ -34,7 +44,7 @@ class FileIOUtils:
         try:
             size = len(question)
             self.correct_data = [] * size
-            
+            data = []
             for idx in range(size):
                 item = {
                     "question": question[idx],
@@ -42,10 +52,32 @@ class FileIOUtils:
                     "ref_solution": ref_solution[idx],
                     "ref_answer": ref_answer[idx]
                 }
-                self.data.append(item)
+                data.append(item)
 
             with open(self.hints_file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, ensure_ascii=False, indent=2)
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"save fail: {e}")
+            return False
+        
+
+    def save_mistakes(self, question: list, answers: list, ref_solution: list, ref_answer: list) -> bool:
+        try:
+            size = len(question)
+            data = []
+            for idx in range(size):
+                item = {
+                    "question": question[idx],
+                    "answer": answers[idx],
+                    "ref_solution": ref_solution[idx],
+                    "ref_answer": ref_answer[idx]
+                }
+                data.append(item)
+
+            with open(self.mistake_file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
             
             return True
         except Exception as e:
