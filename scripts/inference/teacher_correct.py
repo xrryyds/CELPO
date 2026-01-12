@@ -95,21 +95,30 @@ class TeacherCorrect:
             response = completion.choices[0].message.content
             if response.strip().lower() == "a":
                 acc_cnt += 1
+                if len(gold_answer) >= len(answer) * 4:
+                    err_questions.append(self.question[idx])
+                    err_answers.append(self.answer[idx])
+                    err_ref_solutions.append(self.ref_solution[idx])
+                    err_ref_answers.append(self.ref_answer[idx])
             else:
                 err_cnt += 1
                 err_questions.append(self.question[idx])
                 err_answers.append(self.answer[idx])
                 err_ref_solutions.append(self.ref_solution[idx])
                 err_ref_answers.append(self.ref_answer[idx])
+            if idx % 5:
+                left = self.size - idx
+                print(f"finished: {idx}, left: {left}")
         print(f"Accuracy: {acc_cnt}/{self.size}")
         print(f"Error count: {err_cnt}")
+        self.err_conunt = err_cnt
         self.file.save_mistakes(err_questions, err_answers, err_ref_solutions, err_ref_answers)
         return True
             
     def judge_and_gen_hints(self):
         print("Starting judge and generate hints...")
         self.teacher_correct()
-        self.teacher_hints()
+        # self.teacher_hints()
 
 
 
@@ -118,7 +127,7 @@ class TeacherCorrect:
     
 if __name__ == "__main__":
     corrector = TeacherCorrect()
-    corrector.judge_and_gen_hints()
+    # corrector.judge_and_gen_hints()
     
 
 
