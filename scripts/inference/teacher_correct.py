@@ -1,7 +1,8 @@
-from utils import FileIOUtils, extract_hints
+from utils import FileIOUtils, extract_hints ,extract_boxed_content
 from openai import OpenAI
 from prompt.prompts import TEACHER_CORRECT_PROMPT, OREAL_CORRECT_PROMPT
 import os
+
 
 base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
 api_key = "k1y21hll8l0eurf7t3dg4enb56g0hhjjszf4"
@@ -17,7 +18,11 @@ class TeacherCorrect:
         self.file.load_exam()
         self.question, self.answer, self.ref_answer, self.ref_solution = self.file.parse_data(self.file.data)
         self.size = len(self.question)
+
         self.acc = 0
+        self.err_conunt = 0
+        self.toolong_count = 0
+        self.acc_count = 0
 
 
 
@@ -71,8 +76,11 @@ class TeacherCorrect:
             base_url = base_url,
             api_key = api_key,
         )
-        acc_cnt = 0
-        err_cnt = 0
+
+        self.acc_count = 0
+        self.err_conunt = 0
+        self.toolong_count = 0
+
         err_questions = []
         err_answers = []
         err_ref_solutions = []
@@ -80,11 +88,28 @@ class TeacherCorrect:
         
         print("----- standard request -----")
         for idx in range(len(self.question)):
+            # answer too long
+            if len(self.ref_solution[idx]) * 4 <= len(self.answer[idx]):
+                self.toolong_count += 1
+                err_questions.append(self.question[idx])
+                err_answers.append(self.answer[idx])
+                err_ref_solutions.append(self.ref_solution[idx])
+                err_ref_answers.append(self.ref_answer[idx])
+                continue
+            
+            # answer is correct
+            final_answer = extract_boxed_content(self.answer[idx])
+            if final_answer == self.ref_answer[idx]:
+                self.acc_count += 1
+                continue
+            
+            # need teacher correct
             prompt = OREAL_CORRECT_PROMPT.format(
                 question=self.question[idx],
                 gold_answer=self.ref_answer[idx],
                 answer=self.answer[idx]
             )
+
             completion = client.chat.completions.create(
                 model="app-7c54im-1766977238437488331",
                 messages=[
@@ -94,24 +119,19 @@ class TeacherCorrect:
             )
             response = completion.choices[0].message.content
             if response.strip().lower() == "a":
-                acc_cnt += 1
-                if len(gold_answer) >= len(answer) * 4:
-                    err_questions.append(self.question[idx])
-                    err_answers.append(self.answer[idx])
-                    err_ref_solutions.append(self.ref_solution[idx])
-                    err_ref_answers.append(self.ref_answer[idx])
+                self.acc_count += 1
             else:
-                err_cnt += 1
+                self.err_conunt += 1
                 err_questions.append(self.question[idx])
                 err_answers.append(self.answer[idx])
                 err_ref_solutions.append(self.ref_solution[idx])
                 err_ref_answers.append(self.ref_answer[idx])
-            if idx % 5:
+            if idx % 5 == 0:
                 left = self.size - idx
-                print(f"finished: {idx}, left: {left}")
-        print(f"Accuracy: {acc_cnt}/{self.size}")
-        print(f"Error count: {err_cnt}")
-        self.err_conunt = err_cnt
+                print(f"finished: {idx}, left: {left}, acc:{self.acc_count}, err:{self.err_conunt}, toolong:{self.toolong_count}")
+        print(f"Accuracy: {self.acc_count}/{self.size}")
+        print(f"Error count: {self.err_conunt}")
+        self.err_conunt = self.err_conunt
         self.file.save_mistakes(err_questions, err_answers, err_ref_solutions, err_ref_answers)
         return True
             
@@ -127,7 +147,7 @@ class TeacherCorrect:
     
 if __name__ == "__main__":
     corrector = TeacherCorrect()
-    # corrector.judge_and_gen_hints()
+    corrector.judge_and_gen_hints()
     
 
 

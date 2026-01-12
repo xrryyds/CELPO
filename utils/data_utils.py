@@ -39,6 +39,14 @@ def extract_reason(text: str) -> Optional[str]:
         return matches[-1].strip()
     return None
 
+def extract_boxed_content(text: str) -> Optional[str]:
+    pattern = r'\\boxed\{(.*?)\}'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    
+    if matches:
+        return matches[-1].strip()
+    return None
+
 def normalize_answer(answer: str) -> str:
     if answer is None: return ""
     answer = answer.replace(" ", "").lower()
