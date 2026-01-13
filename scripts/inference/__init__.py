@@ -1,5 +1,5 @@
 from .inference import GRPOInference
-from .take_exam import exam
+from .take_exam import TakeExam
 from .teacher_correct import TeacherCorrect
 
 __all__= [
@@ -7,4 +7,5 @@ __all__= [
     "extract_answer",
     "exam",
     "TeacherCorrect",
+    "TakeExam"
 ]

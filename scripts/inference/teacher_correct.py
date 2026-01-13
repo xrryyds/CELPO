@@ -3,6 +3,7 @@ from openai import OpenAI
 from prompt.prompts import TEACHER_CORRECT_PROMPT, OREAL_CORRECT_PROMPT
 import os
 import time
+from scripts import TakeExam
 
 base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
 api_key = "k1y21hll8l0eurf7t3dg4enb56g0hhjjszf4"
@@ -11,14 +12,17 @@ class TeacherCorrect:
     def __init__(self, 
                  exam_file_path: str = "/Users/xiongrengrong/项目/CELPO/datasets/exam/exam.json", 
                  hints_file_path: str = "/Users/xiongrengrong/项目/CELPO/datasets/exam/hints.json",
-                 mistake_collection_book: str = "/Users/xiongrengrong/项目/CELPO/datasets/exam/mistake_collection_book.json"):
+                 mistake_collection_book: str = "/Users/xiongrengrong/项目/CELPO/datasets/exam/mistake_collection_book.json",
+                 student_correct_output_path: str = "/Users/xiongrengrong/项目/CELPO/datasets/exam/correct.json"):
         self.file = FileIOUtils(exam_file_path,
                                 mistake_collection_book,
-                                hints_file_path)
+                                hints_file_path,
+                                student_correct_output_path)
         self.file.load_exam()
         self.question, self.answer, self.ref_answer, self.ref_solution = self.file.parse_data(self.file.data)
         self.size = len(self.question)
 
+        self.student_correct_output_path = student_correct_output_path
         self.acc = 0
         self.err_conunt = 0
         self.toolong_count = 0
@@ -65,7 +69,7 @@ class TeacherCorrect:
             h_ref_solution.append(m_ref_solution[idx])
             h_ref_answer.append(m_ref_answer[idx])
         print("saving hints...")
-        self.file.save_hints(h_question, h_hints, h_ref_solution, h_ref_answer)
+        self.file.save_hints(h_question, h_hints, h_ref_solution, h_ref_answer, m_answer)
         return True
        
 
@@ -151,15 +155,19 @@ class TeacherCorrect:
         # self.teacher_correct()
         self.teacher_hints()
         
-
-
-
-
+    def student_correct(self):
+        print("Starting student correction...")
+        print("load question with hints...")
+        self.file.load_question_with_hints()
+        h_question, h_ref_solution, h_ref_answer = self.file.parse_hints_exam(self.file.question_with_hints)
+        take_exam = TakeExam(self.student_correct_output_path)
+        take_exam.exam(h_question, h_ref_solution, h_ref_answer)
 
     
 if __name__ == "__main__":
     corrector = TeacherCorrect()
     corrector.judge_and_gen_hints()
+    corrector.student_correct()
     
 
 
