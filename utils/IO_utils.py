@@ -41,11 +41,10 @@ class FileIOUtils:
             return False
         
     def parse_data(self, data: list):
-        size = len(data)
-        question = [] * size
-        answer = [] * size
-        ref_answer = [] * size
-        ref_solution = [] * size
+        question = []
+        answer = []
+        ref_answer = []
+        ref_solution = []
         for idx, item in enumerate(data):
             question.append(item.get("question", ""))
             answer.append(item.get("answer", ""))
@@ -54,12 +53,11 @@ class FileIOUtils:
         return question, answer, ref_answer, ref_solution
     
     def parse_hints_exam(self, data: list):
-        size = len(data)
-        question = [] * size
-        question_with_hint = [] * size
-        hints = [] * size
-        ref_answer = [] * size
-        ref_solution = [] * size
+        question = []
+        question_with_hint = []
+        hints = []
+        ref_answer = []
+        ref_solution = []
         for idx, item in enumerate(data):
             question.append(item.get("question", ""))
             hints.append(item.get("hint", ""))
@@ -67,14 +65,12 @@ class FileIOUtils:
             ref_solution.append(item.get("ref_solution", ""))
 
         for idx in range(len(question)):
-            question_with_hint[idx] = GEN_ENHANCE_PROMPT.format(question=question[idx], hints=hints[idx])
-
+            question_with_hint.append(GEN_ENHANCE_PROMPT.format(question=question[idx], hints=hints[idx]))
         return question_with_hint, ref_solution, ref_answer
 
     def save_hints(self, question: list, hints: list, ref_solution: list, ref_answer: list, student_answer: list) -> bool:
         try:
             size = len(question)
-            self.correct_data = [] * size
             data = []
             for idx in range(size):
                 item = {
