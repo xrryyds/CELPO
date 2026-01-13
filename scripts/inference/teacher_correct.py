@@ -3,7 +3,7 @@ from openai import OpenAI
 from prompt.prompts import TEACHER_CORRECT_PROMPT, OREAL_CORRECT_PROMPT
 import os
 import time
-from scripts import TakeExam
+from scripts.inference.take_exam import TakeExam
 
 base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
 api_key = "k1y21hll8l0eurf7t3dg4enb56g0hhjjszf4"
@@ -166,7 +166,7 @@ class TeacherCorrect:
     
 if __name__ == "__main__":
     corrector = TeacherCorrect()
-    corrector.judge_and_gen_hints()
+    # corrector.judge_and_gen_hints()
     corrector.student_correct()
     
 
