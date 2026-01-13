@@ -2,7 +2,7 @@ from utils import FileIOUtils, extract_hints ,extract_boxed_content
 from openai import OpenAI
 from prompt.prompts import TEACHER_CORRECT_PROMPT, OREAL_CORRECT_PROMPT
 import os
-
+import time
 
 base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
 api_key = "k1y21hll8l0eurf7t3dg4enb56g0hhjjszf4"
@@ -32,14 +32,14 @@ class TeacherCorrect:
         print("load mistakes...")
         self.file.load_mistakes()
         m_question, m_answer, m_ref_answer, m_ref_solution = self.file.parse_data(self.file.mistakes)
-        print("mistakes size:", len(self.question))
+        print("mistakes size:", len(m_question))
 
 
         h_question = []
         h_hints = []
         h_ref_solution = []
         h_ref_answer = []
-        print("generating hints...")
+        print(f"generating hints({len(m_question)})...")
         client = OpenAI(
             base_url = base_url,
             api_key = api_key,
@@ -89,18 +89,25 @@ class TeacherCorrect:
         print("----- standard request -----")
         for idx in range(len(self.question)):
             # answer too long
-            if len(self.ref_solution[idx]) * 4 <= len(self.answer[idx]):
-                self.toolong_count += 1
-                err_questions.append(self.question[idx])
-                err_answers.append(self.answer[idx])
-                err_ref_solutions.append(self.ref_solution[idx])
-                err_ref_answers.append(self.ref_answer[idx])
-                continue
+            # if len(self.ref_solution[idx]) * 4 <= len(self.answer[idx]):
+            #     self.toolong_count += 1
+            #     err_questions.append(self.question[idx])
+            #     err_answers.append(self.answer[idx])
+            #     err_ref_solutions.append(self.ref_solution[idx])
+            #     err_ref_answers.append(self.ref_answer[idx])
+            #     continue
             
             # answer is correct
             final_answer = extract_boxed_content(self.answer[idx])
             if final_answer == self.ref_answer[idx]:
                 self.acc_count += 1
+                if idx % 5 == 0:
+                    left = self.size - idx
+                    print(f"finished: {idx}, left: {left}, acc:{self.acc_count}, err:{self.err_conunt}, toolong:{self.toolong_count}")
+                if idx % 20 == 0:
+                    self.file.save_mistakes(err_questions, err_answers, err_ref_solutions, err_ref_answers)
+                    print(f"sleep in idx：{idx}")
+                    time.sleep(10)                
                 continue
             
             # need teacher correct
@@ -129,6 +136,10 @@ class TeacherCorrect:
             if idx % 5 == 0:
                 left = self.size - idx
                 print(f"finished: {idx}, left: {left}, acc:{self.acc_count}, err:{self.err_conunt}, toolong:{self.toolong_count}")
+            if idx % 20 == 0:
+                self.file.save_mistakes(err_questions, err_answers, err_ref_solutions, err_ref_answers)
+                print(f"sleep in idx：{idx}")
+                time.sleep(10)
         print(f"Accuracy: {self.acc_count}/{self.size}")
         print(f"Error count: {self.err_conunt}")
         self.err_conunt = self.err_conunt
@@ -137,8 +148,9 @@ class TeacherCorrect:
             
     def judge_and_gen_hints(self):
         print("Starting judge and generate hints...")
-        self.teacher_correct()
-        # self.teacher_hints()
+        # self.teacher_correct()
+        self.teacher_hints()
+        
 
 
 

@@ -33,7 +33,7 @@ class FileIOUtils:
         answer = [] * size
         ref_answer = [] * size
         ref_solution = [] * size
-        for idx, item in enumerate(self.data):
+        for idx, item in enumerate(data):
             question.append(item.get("question", ""))
             answer.append(item.get("answer", ""))
             ref_answer.append(item.get("ref_answer", ""))
