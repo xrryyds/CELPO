@@ -8,7 +8,6 @@ exam_file_path = os.path.join(project_root, "CELPO", "datasets", "exam", "exam.j
 hints_file_path = os.path.join(project_root,  "CELPO", "datasets", "exam", "hints.json")
 mistakes_file_path = os.path.join(project_root,  "CELPO", "datasets", "exam", "mistake_collection_book.json")
 student_correct_output_path = os.path.join(project_root,  "CELPO", "datasets", "exam", "correct.json")
-correct_file_path = os.path.join(project_root,  "CELPO", "datasets", "exam", "correct.json")
 
 corrector = TeacherCorrect(
     exam_file_path=exam_file_path,
@@ -19,8 +18,6 @@ corrector = TeacherCorrect(
 
 print("Starting student correction...")
 h_question, h_ref_solution, h_ref_answer = corrector.get_question_with_hints()
-print(h_question[0])
-print(h_ref_solution[0])
-print(h_ref_answer[0])
+takeExam = TakeExam(student_correct_output_path)
+takeExam.exam(h_question,h_ref_solution,h_ref_answer)
 
-print()

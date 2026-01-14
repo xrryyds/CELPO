@@ -12,3 +12,4 @@ matplotlib
 huggingface_hub
 safetensors
 OpenAI 
+scikit-learn

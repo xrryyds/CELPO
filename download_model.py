@@ -9,7 +9,7 @@ MY_TOKEN = ""
 print("开始下载模型...")
 snapshot_download(
     repo_id="internlm/OREAL-7B",
-    local_dir="/root/autodl-tmp/xrrfolder/models/internlm/OREAL-7B",
+    local_dir="/root/project/data/xrr/OREAL-7B",
     max_workers=8,
     token=MY_TOKEN  # <--- 加上这一行
 )
