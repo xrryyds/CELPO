@@ -5,6 +5,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import LoraConfig, get_peft_model
 from trl import GRPOTrainer, GRPOConfig
 import os
+import json
 
 
 class ConsistencyRewardFunc:
