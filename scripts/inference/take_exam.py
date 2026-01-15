@@ -10,12 +10,13 @@ from tqdm import tqdm
 
 
 class TakeExam:
-    def __init__(self, exam_result_json_path: str = "/root/project/workspace/xrr/CELPO/datasets/exam/exam.json"):
+    def __init__(self, exam_result_json_path: str = "/root/project/workspace/xrr/CELPO/datasets/exam/exam.json"
+                 , model_path: str =  "/root/project/data/xrr/OREAL-7B"):
         self.BATCH_SIZE = 8  
         self.MAX_NEW_TOKENS = 4096
         self.MAX_SEQ_LENGTH = 6000
     
-        self.LOCAL_MODEL_PATH = "/root/project/data/xrr/OREAL-7B"
+        self.LOCAL_MODEL_PATH = model_path
         self.OUTPUT_JSON_PATH = exam_result_json_path
         
         os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'

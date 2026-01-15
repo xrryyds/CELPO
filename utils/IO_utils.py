@@ -1,12 +1,15 @@
 import json
 from prompt import GEN_ENHANCE_PROMPT
+import os
 
 class FileIOUtils:
-    def __init__(self, exam_file_path: str, mistake_file_path: str ,hints_file_path: str, student_correct_output_path: str):
-        self.exam_file_path = exam_file_path
-        self.mistake_file_path = mistake_file_path
-        self.hints_file_path = hints_file_path
-        self.student_correct_output_path = student_correct_output_path
+    def __init__(self):
+        current_file_path = os.path.abspath(__file__)
+        project_root = os.path.dirname(os.path.dirname(current_file_path)) 
+        self.exam_file_path = os.path.join(project_root, "datasets", "exam", "exam.json")
+        self.mistake_file_path = os.path.join(project_root, "datasets", "exam", "mistake_collection_book.json")
+        self.hints_file_path = os.path.join(project_root, "datasets", "exam", "hints.json")
+        self.student_correct_output_path = os.path.join(project_root, "datasets", "exam", "correct.json")
 
         self.data = []
         self.mistakes = []
@@ -66,7 +69,7 @@ class FileIOUtils:
 
         for idx in range(len(question)):
             question_with_hint.append(GEN_ENHANCE_PROMPT.format(question=question[idx], hints=hints[idx]))
-        return question_with_hint, ref_solution, ref_answer
+        return question, question_with_hint, ref_solution, ref_answer
 
     def save_hints(self, question: list, hints: list, ref_solution: list, ref_answer: list, student_answer: list) -> bool:
         try:

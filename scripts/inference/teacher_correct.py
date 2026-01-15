@@ -8,20 +8,12 @@ base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
 api_key = "k1y21hll8l0eurf7t3dg4enb56g0hhjjszf4"
 
 class TeacherCorrecter:
-    def __init__(self, 
-                 exam_file_path: str, 
-                 hints_file_path: str,
-                 mistake_collection_book: str,
-                 student_correct_output_path: str):
-        self.file = FileIOUtils(exam_file_path,
-                                mistake_collection_book,
-                                hints_file_path,
-                                student_correct_output_path)
+    def __init__(self):
+        self.file = FileIOUtils()
         self.file.load_exam()
         self.question, self.answer, self.ref_answer, self.ref_solution = self.file.parse_data(self.file.data)
         self.size = len(self.question)
 
-        self.student_correct_output_path = student_correct_output_path
         self.acc = 0
         self.err_conunt = 0
         self.toolong_count = 0

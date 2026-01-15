@@ -14,10 +14,10 @@ class ConsistencyRewardFunc:
         self.k = k
         self.device = model.device
 
-    def __call__(self, prompts, completions, promptsWithHints, **kwargs):
+    def __call__(self, prompts, completions, question_with_hints, **kwargs):
         rewards = []
         
-        for p, c, p_w_h in zip(prompts, completions, promptsWithHints):
+        for p, c, p_w_h in zip(prompts, completions, question_with_hints):
             reward = self.compute_single_reward(p, c, p_w_h)
             rewards.append(reward)
             
