@@ -8,3 +8,7 @@ __pycache__/
 # --- 你的产出文件夹 ---
 # 忽略 outputs 文件夹及其下的所有内容
 outputs/
+miniconda.sh
+.vscode/
+
+
