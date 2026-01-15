@@ -45,12 +45,15 @@ class CELPOTrainer:
             tokenizer.pad_token = tokenizer.eos_token
 
         print("Loading model...")
+
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             torch_dtype=torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16,
             device_map="auto",
-            attn_implementation="flash_attention_2" if torch.cuda.is_available() else "eager"
+            # V100 不支持 FlashAttention2，改为使用 PyTorch 原生的 sdpa 加速
+            attn_implementation="sdpa" if torch.cuda.is_available() else "eager"
         )
+
 
         peft_config = LoraConfig(
             r=16,
@@ -81,12 +84,13 @@ class CELPOTrainer:
             lr_scheduler_type="cosine",
             logging_steps=1,
             save_steps=50,
-            bf16=True,
-            per_device_train_batch_size=1, # 显存敏感，设为 1
+            bf16=False,
+            fp16=True,
+            per_device_train_batch_size=4, # 显存敏感，设为 1
             gradient_accumulation_steps=4,
-            num_generations=4,             # Group Size (G)
-            max_prompt_length=128,
-            max_completion_length=64,
+            num_generations=16,             # Group Size (G)
+            max_prompt_length=1904,
+            max_completion_length=4096,
             beta=0.01,                     # RL KL 惩罚系数
             use_vllm=False,                # 自定义复杂 Reward 不方便用 vLLM，建议 False
         )
@@ -107,4 +111,5 @@ class CELPOTrainer:
         trainer.save_model(self.output_dir)
 
 if __name__ == "__main__":
-    celpo_trainer = CELPOTrainer("gpt2")
+    celpo_trainer = CELPOTrainer("/root/project/data/xrr/OREAL-7B")
+    celpo_trainer.train()

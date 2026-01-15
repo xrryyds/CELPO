@@ -9,11 +9,11 @@
             "type": "debugpy",
             "request": "launch",
             // "module": "scripts.train.sft_train",
-            "module": "main", 
+            "module": "celpo.celpo_train", 
             // "program": "${file}",
             "console": "integratedTerminal",
             // "python": "/root/miniconda3/envs/mgrpo/bin/python"
-            "python": "/Users/xiongrengrong/miniconda3/bin/python"
+            "python": "/root/miniconda3/envs/xrr/bin/python"
         }
     ]
 }
