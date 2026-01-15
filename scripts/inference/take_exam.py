@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 class TakeExam:
-    def __init__(self, exam_result_json_path: str = "/root/celpo/CELPO/datasets/exam/exam.json"):
+    def __init__(self, exam_result_json_path: str = "/root/project/workspace/xrr/CELPO/datasets/exam/exam.json"):
         self.BATCH_SIZE = 8  
         self.MAX_NEW_TOKENS = 4096
         self.MAX_SEQ_LENGTH = 6000
