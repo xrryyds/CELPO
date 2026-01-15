@@ -7,7 +7,7 @@ import time
 base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
 api_key = "k1y21hll8l0eurf7t3dg4enb56g0hhjjszf4"
 
-class TeacherCorrect:
+class TeacherCorrecter:
     def __init__(self, 
                  exam_file_path: str, 
                  hints_file_path: str,
@@ -151,8 +151,8 @@ class TeacherCorrect:
             
     def judge_and_gen_hints(self):
         print("Starting judge and generate hints...")
-        # self.teacher_correct()
-        self.teacher_hints()
+        self.teacher_correct()
+        # self.teacher_hints()
         
     def get_question_with_hints(self):
         print("load question with hints...")
