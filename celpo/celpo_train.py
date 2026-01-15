@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from dataclasses import asdict
 from collections import OrderedDict
-
+from .celpo_reward import ConsistencyRewardFunc
 
 from datasets import Dataset
 from transformers import (
@@ -25,46 +25,7 @@ from utils import FileIOUtils
 # 配置 logger
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# 1. 工具函数
-# =============================================================================
-def setup_logging(output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    log_format = "[%(asctime)s][%(levelname)s][Rank %(process)d] %(message)s"
-    logging.basicConfig(
-        level=logging.INFO,
-        format=log_format,
-        handlers=[
-            logging.StreamHandler(sys.stderr),
-            logging.FileHandler(os.path.join(output_dir, "train.log"), encoding='utf-8')
-        ]
-    )
-    return os.path.join(output_dir, "metrics.jsonl")
 
-def log_environment(args):
-    import trl
-    import peft
-    env_info = OrderedDict()
-    env_info["Python"] = sys.version.split()[0]
-    env_info["PyTorch"] = torch.__version__
-    env_info["Transformers"] = transformers.__version__
-    env_info["TRL"] = trl.__version__
-    env_info["PEFT"] = peft.__version__
-    env_info["CUDA"] = torch.version.cuda if torch.cuda.is_available() else "N/A"
-    env_info["GPUs"] = torch.cuda.device_count()
-    
-    logger.info("*" * 40)
-    logger.info("Runtime Environment:")
-    for k, v in env_info.items():
-        logger.info(f"{k}: {v}")
-    logger.info("*" * 40)
-    
-    with open(os.path.join(args.output_dir, "training_args.json"), "w", encoding='utf-8') as f:
-        json.dump(args.to_dict(), f, indent=4)
-
-# =============================================================================
-# 3. Callback
-# =============================================================================
 class CELPOLoggingCallback(TrainerCallback):
     def __init__(self, log_file_path):
         self.log_file_path = log_file_path
