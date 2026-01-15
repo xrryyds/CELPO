@@ -8,6 +8,9 @@ import os
 
 class ConsistencyRewardFunc:
     def __init__(self, model, tokenizer, alpha=1.0, k=0.1):
+        # 1. 修复 AttributeError: 必须定义 __name__
+        self.__name__ = "consistency_reward" 
+        
         self.model = model
         self.tokenizer = tokenizer
         self.alpha = alpha
@@ -17,13 +20,18 @@ class ConsistencyRewardFunc:
     def __call__(self, prompts, completions, question_with_hints, **kwargs):
         rewards = []
         
+        # 2. 修复逻辑错误: 参数顺序必须对应
         for p, c, p_w_h in zip(prompts, completions, question_with_hints):
-            reward = self.compute_single_reward(p, c, p_w_h)
+            # 原始代码是 compute_single_reward(p, c, p_w_h)
+            # 这里的 c 是 completion，但 compute_single_reward 的第二个参数期望的是 promptWithHints
+            # 正确的顺序应该是：prompt, promptWithHints, completions
+            reward = self.compute_single_reward(p, p_w_h, c)
             rewards.append(reward)
             
         return rewards
 
     def compute_single_reward(self, prompt, promptWithHints, completions):
+        # 这里的逻辑假设 promptWithHints 是 Context，completions 是回答
         input_str_1 = f"{promptWithHints}{completions}"
         input_str_2 = f"{prompt}{completions}"
 
@@ -43,18 +51,19 @@ class ConsistencyRewardFunc:
         logits_1 = outputs_1.logits[0]
         logits_2 = outputs_2.logits[0]
 
+        # 这里的切片逻辑是为了取 completion 部分的 logits
         slice_1 = logits_1[len_ctx_1 - 1 : -1] 
         slice_2 = logits_2[len_ctx_2 - 1 : -1]
 
         min_len = min(slice_1.shape[0], slice_2.shape[0])
         
-
         if min_len == 0:
             return 0.0
 
         slice_1 = slice_1[:min_len]
         slice_2 = slice_2[:min_len]
         
+        # KL Divergence: P (slice_1) vs Q (slice_2)
         p1_probs = F.softmax(slice_1, dim=-1)
         p2_log_probs = F.log_softmax(slice_2, dim=-1)
 
