@@ -1,9 +1,11 @@
 import os
 from scripts import TakeExam, TeacherCorrecter
+from utils import FileIOUtils
 
-corrector = TeacherCorrecter()
+exam_paper = FileIOUtils()
+exam_paper.load_question_with_hints()
+question, question_with_hint, ref_solution, ref_answer = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
 
-# h_question, h_ref_solution, h_ref_answer = corrector.get_question_with_hints()
-# takeExam = TakeExam(student_correct_output_path)
-# takeExam.exam(h_question,h_ref_solution,h_ref_answer)
+student_exam = TakeExam()
+student_exam.exam(question_with_hint, ref_solution, ref_answer)
 
