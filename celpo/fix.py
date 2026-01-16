@@ -9,24 +9,22 @@ import logging
 from datetime import datetime, timedelta
 from dataclasses import asdict
 from collections import OrderedDict
-from .celpo_reward import ConsistencyRewardFunc
 
 from datasets import Dataset
 from transformers import (
     AutoTokenizer, 
     AutoModelForCausalLM, 
     TrainerCallback,
-    set_seed
+    set_seed,
+    GenerationConfig
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import GRPOTrainer, GRPOConfig
-from utils import FileIOUtils
+from utils import FileIOUtils 
 
-
-
-
-
-
+# =============================================================================
+# Consistency Reward Function (带 Debug 打印 & Mask 修复)
+# =============================================================================
 class ConsistencyRewardFunc:
     def __init__(self, model, tokenizer, alpha=2.0, k=0.5, log_file=None, inference_batch_size=2):
         self.model = model
@@ -37,6 +35,9 @@ class ConsistencyRewardFunc:
         self.inference_batch_size = inference_batch_size
         self.__name__ = "consistency_reward" 
         
+        # [DEBUG设置] 只打印前 3 次调用，用于快速验证
+        self.debug_log_count = 3
+        
         if self.log_file:
             os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
 
@@ -44,9 +45,22 @@ class ConsistencyRewardFunc:
         rewards = []
         trajectories = []
         
+        # 拼接输入
         inputs_str_1 = [f"{q_h}{c}" for q_h, c in zip(question_with_hints, completions)]
         inputs_str_2 = [f"{p}{c}" for p, c in zip(prompts, completions)]
         
+        # =========================================================================
+        # [DEBUG] 打印输入样本进行检查 (快速测试核心)
+        # =========================================================================
+        if self.debug_log_count > 0:
+            print(f"\n{'='*20} DEBUG: Reward Input Check (Remaining: {self.debug_log_count}) {'='*20}")
+            print(f"[Context 1] (Hint Path):\n{inputs_str_1[0]}")
+            print(f"\n[Context 2] (Direct Path) :\n{inputs_str_2[0]}")
+            print(f"\n[Completion]:\n{completions[0]}")
+            print("="*80 + "\n")
+            self.debug_log_count -= 1
+        # =========================================================================
+
         device = self.model.device
         total_len = len(prompts)
 
@@ -62,11 +76,12 @@ class ConsistencyRewardFunc:
             sub_completions = completions[i:batch_end]
 
             with torch.no_grad():
+                # [修复] 显式传入 attention_mask
                 inputs_1_tokens = self.tokenizer(sub_inputs_1, return_tensors="pt", padding=True, add_special_tokens=False).to(device)
                 inputs_2_tokens = self.tokenizer(sub_inputs_2, return_tensors="pt", padding=True, add_special_tokens=False).to(device)
                 
-                outputs_1 = self.model(**inputs_1_tokens)
-                outputs_2 = self.model(**inputs_2_tokens)
+                outputs_1 = self.model(input_ids=inputs_1_tokens.input_ids, attention_mask=inputs_1_tokens.attention_mask)
+                outputs_2 = self.model(input_ids=inputs_2_tokens.input_ids, attention_mask=inputs_2_tokens.attention_mask)
                 
                 logits_batch_1 = outputs_1.logits
                 logits_batch_2 = outputs_2.logits
@@ -125,19 +140,11 @@ class ConsistencyRewardFunc:
         return rewards
 
 
-
-
-
-
-
-
-
-
-
 # 配置 logger
 logger = logging.getLogger(__name__)
+
 # =============================================================================
-# 1. 工具函数
+# 辅助函数
 # =============================================================================
 def setup_logging(output_dir):
     os.makedirs(output_dir, exist_ok=True)
@@ -189,9 +196,6 @@ class CELPOLoggingCallback(TrainerCallback):
             with open(self.log_file_path, "a", encoding='utf-8') as f:
                 f.write(json.dumps(log_entry) + "\n")
 
-# =============================================================================
-# 4. 主类
-# =============================================================================
 def format_dataset(questions, questions_with_hints, ref_solutions, ref_answers):
     data = []
     for q, q_hint, sol, ans in zip(questions, questions_with_hints, ref_solutions, ref_answers):
@@ -204,6 +208,9 @@ def format_dataset(questions, questions_with_hints, ref_solutions, ref_answers):
         data.append(entry)
     return Dataset.from_list(data)
 
+# =============================================================================
+# CELPO Trainer 主类
+# =============================================================================
 class CELPOTrainer:
     def __init__(self, model_name: str):
         current_file_path = os.path.abspath(__file__)
@@ -227,24 +234,52 @@ class CELPOTrainer:
     def train(self):
         set_seed(42)
         
-        tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        # [修复] Qwen需要 trust_remote_code=True, 且 padding_side="left"
+        tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name, 
+            padding_side="left", 
+            trust_remote_code=True
+        )
+        
+        # [修复逻辑] 针对 Qwen2 的特定处理
+        # 1. 如果 PAD 存在，就用现有的（Qwen2通常是 <|endoftext|>），不要覆盖
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        
+            tokenizer.pad_token_id = tokenizer.eos_token_id
+            logger.info("Pad token was None, set to EOS.")
+        else:
+            logger.info(f"Using existing pad_token: {tokenizer.pad_token} (ID: {tokenizer.pad_token_id})")
+            
+        # 2. [关键修复] 如果 BOS 缺失（Qwen2 默认 None），手动设为 EOS 避免报错
+        if tokenizer.bos_token is None:
+            tokenizer.bos_token = tokenizer.eos_token
+            tokenizer.bos_token_id = tokenizer.eos_token_id
+            logger.info(f"Warning: bos_token was None. Set bos_token to eos_token: {tokenizer.bos_token}")
+
         logger.info("Loading model...")
-        
         attn_impl = "sdpa" if torch.cuda.is_available() else "eager"
-        torch_dtype = torch.float16
         
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            torch_dtype=torch_dtype,
+            torch_dtype=torch.float16, 
             device_map="auto",
-            attn_implementation=attn_impl
+            attn_implementation=attn_impl,
+            trust_remote_code=True
         )
 
-        # [修复 1/3] 使用官方工具函数预处理模型
-        # 这会自动处理 LayerNorm 的精度和梯度检查点的兼容性
+        # [修复] 强制对齐 Model 和 Tokenizer 的配置
+        # 这一步确保 bos_token_id 不再是 None，解决 generation 警告
+        model.config.pad_token_id = tokenizer.pad_token_id
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.bos_token_id = tokenizer.bos_token_id
+        
+        # 显式更新 Generation Config
+        if model.generation_config is not None:
+            model.generation_config.pad_token_id = tokenizer.pad_token_id
+            model.generation_config.eos_token_id = tokenizer.eos_token_id
+            model.generation_config.bos_token_id = tokenizer.bos_token_id
+
+        # 预处理模型
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 
         peft_config = LoraConfig(
@@ -256,8 +291,7 @@ class CELPOTrainer:
         )
         model = get_peft_model(model, peft_config)
         
-        # [修复 2/3] 强制转换 LoRA 参数为 float32
-        # 这是 V100 + fp16 混合精度的关键，防止 GradScaler 报错
+        # [稳定性] 确保 LoRA 权重为 float32
         logger.info("Casting trainable parameters to float32 for mixed precision stability...")
         for name, param in model.named_parameters():
             if "lora" in name or param.requires_grad:
@@ -266,6 +300,7 @@ class CELPOTrainer:
         trainable_params, all_param = model.get_nb_trainable_parameters()
         logger.info(f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.4f}")
 
+        # 实例化 Reward Function
         consistency_reward = ConsistencyRewardFunc(
             model=model, 
             tokenizer=tokenizer, 
@@ -299,7 +334,6 @@ class CELPOTrainer:
             max_completion_length=2048,     
             
             gradient_checkpointing=True,
-            # [修复 3/3] 设置 use_reentrant=False 以解决显存和反向传播的兼容性
             gradient_checkpointing_kwargs={'use_reentrant': False},
             
             beta=0.01,
