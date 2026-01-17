@@ -78,7 +78,7 @@ class TakeExam:
                         max_new_tokens=self.MAX_NEW_TOKENS,
                         pad_token_id=self.tokenizer.pad_token_id,
                         do_sample=True,
-                        temperature=0.7, 
+                        temperature=0.1, 
                         top_p=0.9,
                         use_cache=True 
                     )
