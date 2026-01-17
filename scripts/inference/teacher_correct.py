@@ -1,7 +1,6 @@
 from utils import FileIOUtils, extract_hints ,extract_boxed_content, normalize_answer
 from openai import OpenAI
 from prompt.prompts import TEACHER_CORRECT_PROMPT, OREAL_CORRECT_PROMPT
-import os
 import time
 
 base_url = "https://wanqing-api.corp.kuaishou.com/api/agent/v1/apps"
@@ -72,6 +71,7 @@ class TeacherCorrecter:
         h_question, h_ref_solution, h_ref_answer = self.file.parse_hints_exam(self.file.question_with_hints)
         return h_question, h_ref_solution, h_ref_answer
     
+
     def teacher_mark_paper(self):
         print("Starting teacher marking...")
         self.file.load_exam()
@@ -95,11 +95,14 @@ class TeacherCorrecter:
         for idx in range(size):
             final_answer = extract_boxed_content(answer[idx])
             final_answer = normalize_answer(final_answer)
+            
+            # 如果答案直接匹配，跳过 API 请求
             if final_answer == ref_answer[idx]:
                 self.acc_count += 1
                 if idx % 5 == 0:
                     left = size - idx
                     print(f"finished: {idx}, left: {left}, acc:{self.acc_count}, err:{self.err_count}, toolong:{self.toolong_count}")
+                # 原有的休眠逻辑保留
                 if idx % 20 == 0:
                     print(f"sleep in idx：{idx}")
                     time.sleep(10)                
@@ -111,14 +114,26 @@ class TeacherCorrecter:
                 answer=answer[idx]
             )
 
-            completion = client.chat.completions.create(
-                model="app-7c54im-1766977238437488331",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant who good at math"},
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            response = completion.choices[0].message.content
+            response = None
+            while True:
+                try:
+                    completion = client.chat.completions.create(
+                        model="app-7c54im-1766977238437488331",
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant who good at math"},
+                            {"role": "user", "content": prompt},
+                        ],
+                    )
+                    response = completion.choices[0].message.content
+                    break 
+                
+                except openai.RateLimitError:
+                    print(f"Rate limit reached at idx {idx}. Sleeping for 20 seconds...")
+                    time.sleep(20)
+                except Exception as e:
+                    print(f"An unexpected error occurred at idx {idx}: {e}")
+                    raise e
+
             if response.strip().lower() == "a":
                 self.acc_count += 1
             else:
@@ -127,16 +142,19 @@ class TeacherCorrecter:
                 err_answers.append(answer[idx])
                 err_ref_solutions.append(ref_solution[idx])
                 err_ref_answers.append(ref_answer[idx])
+            
             if idx % 5 == 0:
                 left = size - idx
                 print(f"finished: {idx}, left: {left}, acc:{self.acc_count}, err:{self.err_count}, toolong:{self.toolong_count}")
+            
             if idx % 20 == 0:
                 print(f"sleep in idx：{idx}")
                 time.sleep(10)
+                
         print(f"Accuracy: {self.acc_count}/{size}")
         print(f"Error count: {self.err_count}")
-        self.err_count = self.err_count
         return err_questions, err_answers, err_ref_solutions, err_ref_answers
+
     
 # if __name__ == "__main__":
     # corrector = TeacherCorrecter()
