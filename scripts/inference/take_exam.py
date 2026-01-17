@@ -10,8 +10,15 @@ from tqdm import tqdm
 
 
 class TakeExam:
-    def __init__(self, exam_result_json_path: str = "/root/project/workspace/xrr/CELPO/datasets/exam/exam.json"
-                 , model_path: str =  "/root/project/data/xrr/OREAL-7B"):
+    def __init__(self,  model_path: str =  "/root/project/data/xrr/OREAL-7B", correct:bool = False):
+        
+        current_file_path = os.path.abspath(__file__)
+        project_root = os.path.dirname(os.path.dirname(current_file_path)) 
+        if correct:
+            exam_result_json_path = os.path.join(project_root, "datasets", "exam", "correct.json")
+        else: 
+            exam_result_json_path = os.path.join(project_root, "datasets", "exam", "exam.json")
+
         self.BATCH_SIZE = 8  
         self.MAX_NEW_TOKENS = 4096
         self.MAX_SEQ_LENGTH = 6000
