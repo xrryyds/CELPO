@@ -7,4 +7,6 @@ __all__= [
     "GEN_ENHANCE_PROMPT",
     "TEACHER_CORRECT_PROMPT",
     "OREAL_CORRECT_PROMPT",
+    "GEN_PROMPT",
+    
 ]

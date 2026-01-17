@@ -83,9 +83,24 @@ Answer the questions.
 # Question:
 {question}
 # known:
+<KNOWN>
 {hints}
+</KNOWN>
 """
 
+GEN_PROMPT= """
+Answer the questions.
+# Question:
+{question}
+"""
+
+GEN_HINTS_WIH_ANSWER= """
+# known:
+<KNOWN>
+{hints}
+</KNOWN>
+{answer}
+"""
 
 TEACHER_CORRECT_PROMPT = """
 **Role:** Heuristic Logic Mentor & Knowledge Bridge
