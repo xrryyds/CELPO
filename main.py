@@ -18,5 +18,5 @@ def teacher_correct():
 
 
 if __name__ == "__main__":
-    # take_exam()
-    teacher_correct()
+    take_exam()
+    # teacher_correct()

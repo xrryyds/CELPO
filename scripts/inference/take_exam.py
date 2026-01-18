@@ -14,14 +14,17 @@ class TakeExam:
         
         current_file_path = os.path.abspath(__file__)
         project_root = os.path.dirname(os.path.dirname(current_file_path)) 
+        project_root = os.path.dirname(project_root) 
         if correct:
             exam_result_json_path = os.path.join(project_root, "datasets", "exam", "correct.json")
         else: 
             exam_result_json_path = os.path.join(project_root, "datasets", "exam", "exam.json")
 
+
+        print(exam_result_json_path)
         self.BATCH_SIZE = 8  
-        self.MAX_NEW_TOKENS = 4096
-        self.MAX_SEQ_LENGTH = 6000
+        self.MAX_NEW_TOKENS = 3072
+        self.MAX_SEQ_LENGTH = 4096
     
         self.LOCAL_MODEL_PATH = model_path
         self.OUTPUT_JSON_PATH = exam_result_json_path
