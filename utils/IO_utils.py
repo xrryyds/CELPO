@@ -129,4 +129,16 @@ class FileIOUtils:
         except Exception as e:
             print(f"save fail: {e}")
             return False
+        
+    def save_results_to_json(data_list, path):
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(data_list, f, ensure_ascii=False, indent=2)
+            print(f"Successfully saved to {path}")
+            return True
+        except Exception as e:
+            print(f"Save fail for {path}: {e}")
+            return False
 

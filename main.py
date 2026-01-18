@@ -17,29 +17,69 @@ def student_correct():
     err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers = teacher.teacher_mark_paper()
 
     err_idx_set = set(err_question_idx)
-
     correct_group = []
     incorrect_group = []
-
     total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer)
 
     for q_id, q, q_hint, r_sol, r_ans, s_ans in total_data:
-        data_item = {
+        item = {
             "question_idx": q_id,
             "question": q,
-            "question_with_hints": q_hint,
+            "question_with_hints": q_hint, 
             "ref_solution": r_sol,
             "ref_answer": r_ans,
-            "student_answer":s_ans
+            "student_answer": s_ans
         }
-
+        
         if q_id in err_idx_set:
-            incorrect_group.append(data_item)
+            incorrect_group.append(item)
         else:
-            correct_group.append(data_item)
-    return correct_group, incorrect_group
+            correct_group.append(item)
+
+    data_for_teacher_grpo = []
+    for item in correct_group:
+        data_for_teacher_grpo .append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "question_with_hints": item["question_with_hints"],
+            "student_answer": item["student_answer"],
+            "success": True
+        })
+        
+    for item in incorrect_group:
+        data_for_teacher_grpo.append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "question_with_hints": item["question_with_hints"],
+            "student_answer": item["student_answer"],
+            "success": False
+        })
+    
+    data_for_student_celpo = []
+    for item in correct_group:
+        data_for_student_celpo.append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "question_with_hints": item["question_with_hints"],
+            "ref_solution": item["ref_solution"],
+            "ref_answer": item["ref_answer"]
+        })
+    
+    current_file_path = os.path.abspath(__file__)
+    project_root = os.path.dirname(os.path.dirname(current_file_path)) 
+    celpo_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "adv_hints.json")
+    grpo_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "grpo_data.json")
+
+    exam_paper.save_results_to_json(data_for_teacher_grpo, grpo_dataset_path)
+    exam_paper.save_results_to_json(data_for_student_celpo, celpo_dataset_path)
 
 
+
+def teacher_correct():
+    teacher = TeacherCorrecter()
+    teacher.teacher_mark_paper_with_save()
+    teacher.teacher_hints()
+    del teacher
 
 
 
@@ -68,7 +108,5 @@ if __name__ == "__main__":
 
     # #2. teacher judges and gives hints
     teacher = TeacherCorrecter()
-    # teacher.teacher_mark_paper_with_save()
-    # teacher.get_question_with_hints()
 
     #3. teacher correct
