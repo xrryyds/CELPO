@@ -62,6 +62,7 @@ def student_correct():
             "question_idx": item["question_idx"],
             "question": item["question"],
             "hints": extract_KNOWN(item["question_with_hints"]),
+            "student_answer": item["student_answer"],
             "ref_solution": item["ref_solution"],
             "ref_answer": item["ref_answer"]
         })
