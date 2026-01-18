@@ -55,7 +55,7 @@ class FileIOUtils:
             answer.append(item.get("answer", ""))
             ref_answer.append(item.get("ref_answer", ""))
             ref_solution.append(item.get("ref_solution", ""))
-        return question_idx,question, answer, ref_answer, ref_solution
+        return question_idx, question, answer, ref_answer, ref_solution
     
     def parse_hints_exam(self, data: list):
         question_idx = []
@@ -130,7 +130,7 @@ class FileIOUtils:
             print(f"save fail: {e}")
             return False
         
-    def save_results_to_json(data_list, path):
+    def save_results_to_json(self, data_list, path):
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             

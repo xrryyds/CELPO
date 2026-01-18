@@ -103,7 +103,7 @@ class TakeExam:
                         "answer": generated_text.strip(),
                         "ref_answer": batch_ref_answers[idx].strip(),
                         "ref_solution": batch_ref_solution[idx].strip(),
-                        "qustion_idx": batch_question_idx[idx]
+                        "question_idx": batch_question_idx[idx]
                     })
                     
                 if (i // self.BATCH_SIZE) % 10 == 0:

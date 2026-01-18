@@ -10,12 +10,12 @@ exam_paper = FileIOUtils()
 def student_correct():
     exam_paper.load_question_with_hints()
     question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
-    
-    student_exam = TakeExam()
-    student_exam.exam(question_with_hint, ref_solution, ref_answer ,question_idx)
+    # student_exam = TakeExam()
+    # student_exam.exam(question_with_hint, ref_solution, ref_answer ,question_idx)
 
     teacher = TeacherCorrecter()
     err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers = teacher.teacher_mark_paper()
+    exam_paper.save_mistakes(err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers)
 
     err_idx_set = set(err_question_idx)
     correct_group = []

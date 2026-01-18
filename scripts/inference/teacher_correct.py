@@ -92,7 +92,7 @@ class TeacherCorrecter:
         print("Starting teacher marking...")
         self.file.load_exam()
         question_idx, question, answer, ref_answer, ref_solution = self.file.parse_data(self.file.data)
-
+        print(f"idx{question_idx[1]}")
         size = len(question)
         client = OpenAI(
             base_url = base_url,
