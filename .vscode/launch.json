@@ -8,8 +8,8 @@
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
-            // "module": "scripts.train.sft_train",
-            "module": "celpo.celpo_train", 
+            "module": "scripts.train.student_train",
+            // "module": "celpo.celpo_train", 
             // "program": "${file}",
             "console": "integratedTerminal",
             // "python": "/root/miniconda3/envs/mgrpo/bin/python"

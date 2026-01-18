@@ -106,9 +106,9 @@ class HintDropoutCollator:
         metadata_batch = []
 
         for item in batch:
-            q = item['prompt']
+            q = item['question']
             b = item['hints']
-            c = item['response']
+            c = item['']
 
             use_hint = random.random() < p_hint
         
@@ -262,7 +262,7 @@ def main():
     project_root = os.path.dirname(project_root)
     project_root = os.path.dirname(project_root)
     output_dir = os.path.join(project_root, "outputs", "hint_sft", timestamp)
-    data_path= os.path.join(project_root, "datasets", "exam", "hints.json")
+    data_path= os.path.join(project_root, "datasets", "exam", "adv_hints.json")
 
     metrics_log_path = setup_logging(output_dir)
     snapshot_log_path = os.path.join(output_dir, "debug_snapshots.jsonl")
