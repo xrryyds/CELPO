@@ -6,7 +6,7 @@ import json
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
-
+from transformers import set_seed 
 
 
 class TakeExam:
@@ -16,6 +16,7 @@ class TakeExam:
         project_root = os.path.dirname(os.path.dirname(current_file_path)) 
         project_root = os.path.dirname(project_root) 
         exam_result_json_path = os.path.join(project_root, "datasets", "exam", "exam.json")
+        set_seed(42)
 
         print(exam_result_json_path)
         self.BATCH_SIZE = 8  
