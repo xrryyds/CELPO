@@ -58,7 +58,7 @@ class TakeExam:
             batch_questions = question[i:i+self.BATCH_SIZE]
             batch_ref_answers = answer[i:i+self.BATCH_SIZE]
             batch_ref_solution = solution[i:i+self.BATCH_SIZE]
-            batch_question_idx = solution[i:i+self.BATCH_SIZE]
+            batch_question_idx = question_idx[i:i+self.BATCH_SIZE]
 
             try:
                 batch_prompts = []
