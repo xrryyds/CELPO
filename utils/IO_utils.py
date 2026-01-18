@@ -44,41 +44,48 @@ class FileIOUtils:
             return False
         
     def parse_data(self, data: list):
+        question_idx = []
         question = []
         answer = []
         ref_answer = []
         ref_solution = []
         for idx, item in enumerate(data):
+            question_idx.append(item.get("question_idx", "")),
             question.append(item.get("question", ""))
             answer.append(item.get("answer", ""))
             ref_answer.append(item.get("ref_answer", ""))
             ref_solution.append(item.get("ref_solution", ""))
-        return question, answer, ref_answer, ref_solution
+        return question_idx,question, answer, ref_answer, ref_solution
     
     def parse_hints_exam(self, data: list):
+        question_idx = []
         question = []
         question_with_hint = []
         hints = []
         ref_answer = []
         ref_solution = []
+        student_answer = []
         for idx, item in enumerate(data):
             question.append(item.get("question", ""))
-            hints.append(item.get("hint", ""))
+            hints.append(item.get("hints", ""))
             ref_answer.append(item.get("ref_answer", ""))
             ref_solution.append(item.get("ref_solution", ""))
+            question_idx.append(item.get("question_idx", ""))
+            student_answer.append(item.get("student_answer",""))
 
         for idx in range(len(question)):
             question_with_hint.append(GEN_ENHANCE_PROMPT.format(question=question[idx], hints=hints[idx]))
-        return question, question_with_hint, ref_solution, ref_answer
+        return question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer
 
-    def save_hints(self, question: list, hints: list, ref_solution: list, ref_answer: list, student_answer: list) -> bool:
+    def save_hints(self, question: list, hints: list, ref_solution: list, ref_answer: list, question_idx: list,student_answer: list) -> bool:
         try:
             size = len(question)
             data = []
             for idx in range(size):
                 item = {
+                    "question_idx": question_idx[idx],
                     "question": question[idx],
-                    "hint": hints[idx],
+                    "hints": hints[idx],
                     "ref_solution": ref_solution[idx],
                     "ref_answer": ref_answer[idx],
                     "student_answer": student_answer[idx]
@@ -94,19 +101,20 @@ class FileIOUtils:
             return False
         
 
-    def save_mistakes(self, question: list, answers: list, ref_solution: list, ref_answer: list) -> bool:
-        self.save_Q_and_A(question, answers, ref_solution, ref_answer, self.mistake_file_path)
+    def save_mistakes(self, question_idx: list, question: list, answers: list, ref_solution: list, ref_answer: list) -> bool:
+        self.save_Q_and_A(question_idx, question, answers, ref_solution, ref_answer, self.mistake_file_path)
 
 
-    def save_student_correct(self, question: list, answers: list, ref_solution: list, ref_answer: list) -> bool:
-        self.save_Q_and_A(question, answers, ref_solution, ref_answer, self.student_correct_output_path)    
+    def save_student_correct(self, question_idx: list, question: list, answers: list, ref_solution: list, ref_answer: list) -> bool:
+        self.save_Q_and_A(question_idx,question, answers, ref_solution, ref_answer, self.student_correct_output_path)    
 
-    def save_Q_and_A(self, question: list, answers: list, ref_solution: list, ref_answer: list, path:str) -> bool:
+    def save_Q_and_A(self, question_idx: list, question: list, answers: list, ref_solution: list, ref_answer: list, path:str) -> bool:
         try:
             size = len(question)
             data = []
             for idx in range(size):
                 item = {
+                    "question_idx": question_idx[idx],
                     "question": question[idx],
                     "answer": answers[idx],
                     "ref_solution": ref_solution[idx],

@@ -265,13 +265,18 @@ class CurriculumCallback(TrainerCallback):
                 f.write(json.dumps(log_entry) + "\n")
 
 def main():
+    SEED = 42
+    set_seed(SEED)
     model_name_or_path = "/root/project/data/xrr/OREAL-7B" 
-    data_path = "data.jsonl" 
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     project_root = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(project_root)
+    project_root = os.path.dirname(project_root)
     output_dir = os.path.join(project_root, "outputs", "hint_sft", timestamp)
-    
+    data_path= os.path.join(project_root, "datasets", "exam", "hins.json")
+
     metrics_log_path = setup_logging(output_dir)
     snapshot_log_path = os.path.join(output_dir, "debug_snapshots.jsonl")
     

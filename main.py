@@ -1,22 +1,74 @@
 import os
 from scripts import TakeExam, TeacherCorrecter
 from utils import FileIOUtils
+from configs import GRPOConfig
+from data_math import Math_500
 
 exam_paper = FileIOUtils()
 
-def take_exam():
+def student_correct():
     exam_paper.load_question_with_hints()
-    question, question_with_hint, ref_solution, ref_answer = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
+    question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
+    
     student_exam = TakeExam()
-    student_exam.exam(question_with_hint, ref_solution, ref_answer)
+    student_exam.exam(question_with_hint, ref_solution, ref_answer ,question_idx)
 
-
-def teacher_correct():
     teacher = TeacherCorrecter()
-    # teacher.judge_and_gen_hints()
-    teacher.teacher_mark_paper()
+    err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers = teacher.teacher_mark_paper()
 
+    err_idx_set = set(err_question_idx)
+
+    correct_group = []
+    incorrect_group = []
+
+    total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer)
+
+    for q_id, q, q_hint, r_sol, r_ans, s_ans in total_data:
+        data_item = {
+            "question_idx": q_id,
+            "question": q,
+            "question_with_hints": q_hint,
+            "ref_solution": r_sol,
+            "ref_answer": r_ans,
+            "student_answer":s_ans
+        }
+
+        if q_id in err_idx_set:
+            incorrect_group.append(data_item)
+        else:
+            correct_group.append(data_item)
+    return correct_group, incorrect_group
+
+
+
+
+
+
+def student_first_take_exam():
+    current_file_path = os.path.abspath(__file__)
+    project_root = os.path.dirname(os.path.dirname(current_file_path)) 
+    exam_file_path = os.path.join(project_root, "CELPO", "configs", "celpo_train.yaml")
+    config = GRPOConfig.load_yaml(exam_file_path)
+    math_500 = Math_500(config)
+    test_dataset = math_500.get_test_data()
+    train_dataset= math_500.get_train_data()
+    question = test_dataset.problems + train_dataset.problems
+    solution = test_dataset.solutions + train_dataset.solutions
+    answer = test_dataset.answers + train_dataset.answers
+    print(f"dataset_len_check: {len(question)} {len(solution)} {len(answer)}")
+    take_exam = TakeExam()
+    question_idx = []
+    for idx in range(len(question)):
+        question_idx.append(idx)
+    take_exam.exam(question, solution, answer, question_idx)
 
 if __name__ == "__main__":
-    take_exam()
-    # teacher_correct()
+    # #1. student first take exam
+    # student_first_take_exam()
+
+    # #2. teacher judges and gives hints
+    teacher = TeacherCorrecter()
+    # teacher.teacher_mark_paper_with_save()
+    # teacher.get_question_with_hints()
+
+    #3. teacher correct

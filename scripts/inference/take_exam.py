@@ -10,16 +10,12 @@ from tqdm import tqdm
 
 
 class TakeExam:
-    def __init__(self,  model_path: str =  "/root/project/data/xrr/OREAL-7B", correct:bool = False):
+    def __init__(self,  model_path: str =  "/root/project/data/xrr/OREAL-7B"):
         
         current_file_path = os.path.abspath(__file__)
         project_root = os.path.dirname(os.path.dirname(current_file_path)) 
         project_root = os.path.dirname(project_root) 
-        if correct:
-            exam_result_json_path = os.path.join(project_root, "datasets", "exam", "correct.json")
-        else: 
-            exam_result_json_path = os.path.join(project_root, "datasets", "exam", "exam.json")
-
+        exam_result_json_path = os.path.join(project_root, "datasets", "exam", "exam.json")
 
         print(exam_result_json_path)
         self.BATCH_SIZE = 8  
@@ -53,7 +49,7 @@ class TakeExam:
 
 
 
-    def exam(self, question, solution, answer):
+    def exam(self, question, solution, answer, question_idx):
         results = []
         total_batches = (len(question) + self.BATCH_SIZE - 1) // self.BATCH_SIZE
         
@@ -104,7 +100,8 @@ class TakeExam:
                         "question": batch_questions[idx],
                         "answer": generated_text.strip(),
                         "ref_answer": batch_ref_answers[idx].strip(),
-                        "ref_solution": batch_ref_solution[idx].strip()
+                        "ref_solution": batch_ref_solution[idx].strip(),
+                        "qustion_idx": question_idx[idx]
                     })
                     
                 if (i // self.BATCH_SIZE) % 10 == 0:
@@ -141,4 +138,7 @@ if __name__ == "__main__":
     answer = test_dataset.answers + train_dataset.answers
     print(f"dataset_len_check: {len(question)} {len(solution)} {len(answer)}")
     take_exam = TakeExam()
-    take_exam.exam(question, solution, answer)
+    question_idx = []
+    for idx in range(len(question)):
+        question_idx.append(idx)
+    take_exam.exam(question, solution, answer, question_idx)
