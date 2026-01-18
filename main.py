@@ -3,6 +3,7 @@ from scripts import TakeExam, TeacherCorrecter
 from utils import FileIOUtils
 from configs import GRPOConfig
 from data_math import Math_500
+from utils import extract_KNOWN
 
 exam_paper = FileIOUtils()
 
@@ -41,7 +42,7 @@ def student_correct():
         data_for_teacher_grpo .append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "question_with_hints": item["question_with_hints"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
             "student_answer": item["student_answer"],
             "success": True
         })
@@ -50,7 +51,7 @@ def student_correct():
         data_for_teacher_grpo.append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "question_with_hints": item["question_with_hints"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
             "student_answer": item["student_answer"],
             "success": False
         })
@@ -60,7 +61,7 @@ def student_correct():
         data_for_student_celpo.append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "question_with_hints": item["question_with_hints"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
             "ref_solution": item["ref_solution"],
             "ref_answer": item["ref_answer"]
         })
@@ -109,5 +110,6 @@ if __name__ == "__main__":
     # #2. teacher judges and gives hints
     teacher = TeacherCorrecter()
     # teacher.teacher_mark_paper_with_save()
-    teacher.teacher_hints()
+    # teacher.teacher_hints()
+    student_correct()
     #3. teacher correct

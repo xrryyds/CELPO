@@ -3,6 +3,14 @@ from typing import Optional
 import prompt
 
 
+
+def extract_KNOWN(text: str) -> Optional[str]:
+    pattern = r'<KNOWN>\s*(.*?)\s*</KNOWN>'
+    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    if matches:
+        return matches[-1].strip()
+    return None
+
 def extract_hints(text: str) -> Optional[str]:
     pattern = r'<hints>\s*(.*?)\s*</hints>'
     matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)

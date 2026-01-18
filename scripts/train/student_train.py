@@ -133,14 +133,11 @@ class HintDropoutCollator:
             weights = [0.0] * len(p_ids) + [1.0] * len(r_ids)
 
             if mode == "no_hint":
-                # 在 response 部分寻找 <KNOWN> 和 </KNOWN>
                 hs = self.find_subseq_range(r_ids, self.h_start)
                 he = self.find_subseq_range(r_ids, self.h_end)
 
                 # 如果找到了完整的标签对，增加中间内容的权重
                 if hs and he and he[0] > hs[1]:
-                    # 注意：find_subseq_range 返回的是 r_ids 中的索引
-                    # 需要加上 p_ids 的长度才能对应到 weights 的索引
                     start_idx = len(p_ids) + hs[0] 
                     end_idx = len(p_ids) + he[1] 
                     
@@ -159,7 +156,6 @@ class HintDropoutCollator:
                 "raw_text": prompt_str + response_str
             })
 
-        # 手动 Padding，默认在右侧填充
         input_ids = torch.nn.utils.rnn.pad_sequence(input_ids_batch, batch_first=True, padding_value=self.tokenizer.pad_token_id)
         labels = torch.nn.utils.rnn.pad_sequence(labels_batch, batch_first=True, padding_value=-100)
         weights = torch.nn.utils.rnn.pad_sequence(weights_batch, batch_first=True, padding_value=0.0)
@@ -228,7 +224,7 @@ class HintSFTTrainer(Trainer):
             "loss": current_loss,
             "p_hint": sample["p_hint"],
             "mode": sample["mode"],
-            "text_preview": sample["raw_text"][:200] + "..." # 截断一下避免日志太大
+            "text_preview": sample["raw_text"][:200] + "..."
         }
         with open(self.snapshot_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -266,7 +262,7 @@ def main():
     project_root = os.path.dirname(project_root)
     project_root = os.path.dirname(project_root)
     output_dir = os.path.join(project_root, "outputs", "hint_sft", timestamp)
-    data_path= os.path.join(project_root, "datasets", "exam", "hins.json")
+    data_path= os.path.join(project_root, "datasets", "exam", "hints.json")
 
     metrics_log_path = setup_logging(output_dir)
     snapshot_log_path = os.path.join(output_dir, "debug_snapshots.jsonl")
@@ -274,16 +270,12 @@ def main():
     logger.info(f"Model: {model_name_or_path}")
     logger.info(f"Output Dir: {output_dir}")
     
-    # 1. 加载 Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
-    # 显式设置为 right padding，与 Collator 行为一致
     tokenizer.padding_side = "right"
 
-    # [新增] 为了确保 <KNOWN> 和 </KNOWN> 能被正确识别为一个 token，建议添加特殊 token
-    # 如果你的 Prompt 模板里直接用字符串，这一步可以显著增加稳定性
     special_tokens = ["<KNOWN>", "</KNOWN>"]
     if tokenizer.pad_token is None:
-        special_tokens.append(tokenizer.eos_token) # 如果没有pad token，占个位
+        special_tokens.append(tokenizer.eos_token) 
         
     num_added = tokenizer.add_special_tokens({'additional_special_tokens': ["<KNOWN>", "</KNOWN>"]})
     logger.info(f"Added {num_added} special tokens.")
@@ -298,7 +290,6 @@ def main():
     else:
         dataset = Dataset.from_json(data_path)
 
-    # 2. 加载模型
     logger.info("Loading model...")
     model = AutoModelForCausalLM.from_pretrained(
         model_name_or_path,
