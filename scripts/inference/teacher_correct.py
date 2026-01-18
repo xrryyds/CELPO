@@ -66,7 +66,6 @@ class TeacherCorrecter:
             h_hints.append(hints)
             h_ref_solution.append(m_ref_solution[idx])
             h_ref_answer.append(m_ref_answer[idx])
-            h_question_idx.append(idx)
             
         print("saving hints...")
         self.file.save_hints(h_question, h_hints, h_ref_solution, h_ref_answer, h_question_idx, m_answer)
@@ -93,6 +92,7 @@ class TeacherCorrecter:
         print("Starting teacher marking...")
         self.file.load_exam()
         question_idx, question, answer, ref_answer, ref_solution = self.file.parse_data(self.file.data)
+
         size = len(question)
         client = OpenAI(
             base_url = base_url,

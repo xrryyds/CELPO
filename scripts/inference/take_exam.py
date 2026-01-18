@@ -57,6 +57,7 @@ class TakeExam:
             batch_questions = question[i:i+self.BATCH_SIZE]
             batch_ref_answers = answer[i:i+self.BATCH_SIZE]
             batch_ref_solution = solution[i:i+self.BATCH_SIZE]
+            batch_question_idx = solution[i:i+self.BATCH_SIZE]
 
             try:
                 batch_prompts = []
@@ -101,7 +102,7 @@ class TakeExam:
                         "answer": generated_text.strip(),
                         "ref_answer": batch_ref_answers[idx].strip(),
                         "ref_solution": batch_ref_solution[idx].strip(),
-                        "qustion_idx": question_idx[idx]
+                        "qustion_idx": batch_question_idx[idx]
                     })
                     
                 if (i // self.BATCH_SIZE) % 10 == 0:

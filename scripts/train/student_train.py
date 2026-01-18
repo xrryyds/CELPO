@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import time
-import math
 import random
 import torch
 import torch.nn.functional as F
@@ -11,9 +10,8 @@ import logging
 from datetime import datetime, timedelta
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
 import peft
-# 假设 prompt.py 存在于同级目录，否则请将模板字符串定义在此处
+
 from prompt import GEN_ENHANCE_PROMPT, GEN_PROMPT, GEN_HINTS_WIH_ANSWER
 
 from datasets import Dataset
@@ -28,9 +26,6 @@ from transformers import (
 from transformers.trainer_pt_utils import get_parameter_names
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
-# ===========================
-# 1. Config 定义放回头部，避免 ImportError
-# ===========================
 @dataclass
 class HintSFTConfig:
     p_hint_start: float = 0.95     
@@ -38,7 +33,6 @@ class HintSFTConfig:
     hint_loss_weight: float = 4.0  
     debug_sample_steps: int = 50
 
-# 配置 logger
 logger = logging.getLogger(__name__)
 
 def setup_logging(output_dir):
@@ -80,11 +74,9 @@ class HintDropoutCollator:
         self.current_step = 0
         self.total_steps = 1
         
-        # 确保 pad_token_id 存在
         if self.tokenizer.pad_token_id is None:
              self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
-        # 获取标记的 token ids
         self.h_start = tokenizer("<KNOWN>", add_special_tokens=False).input_ids
         self.h_end = tokenizer("</KNOWN>", add_special_tokens=False).input_ids
 
@@ -133,12 +125,11 @@ class HintDropoutCollator:
             r_ids = self.tokenizer(response_str, add_special_tokens=False).input_ids + [self.tokenizer.eos_token_id]
 
             if len(p_ids) + len(r_ids) > self.max_length:
+                print(f"truncate input_ids to max_length!!")
                 r_ids = r_ids[:self.max_length - len(p_ids)]
             
             full_ids = p_ids + r_ids
-            # Prompt 部分的 label 设为 -100 (不计算 loss)
             labels = [-100] * len(p_ids) + r_ids
-            # 基础权重：Prompt=0, Response=1
             weights = [0.0] * len(p_ids) + [1.0] * len(r_ids)
 
             if mode == "no_hint":
