@@ -180,7 +180,7 @@ if __name__ == "__main__":
     solution = test_dataset.solutions + train_dataset.solutions
     answer = test_dataset.answers + train_dataset.answers
     print(f"dataset_len_check: {len(question)} {len(solution)} {len(answer)}")
-    take_exam = TakeExam()
+    take_exam = TakeExam("/root/project/data/xrr/Qwen/Qwen2.5-Math-7B-Instruct")
     question_idx = []
     for idx in range(len(question)):
         question_idx.append(idx)

@@ -84,7 +84,7 @@ def teacher_correct():
     del teacher
 
 def single_qusestion(qusetion):
-    student_exam = TakeExam()
+    student_exam = TakeExam("/root/project/data/xrr/Qwen/Qwen2.5-7B-Instruct")
     return student_exam.answer_single_question(qusetion)
 
 
