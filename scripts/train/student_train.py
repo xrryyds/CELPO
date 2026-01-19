@@ -108,7 +108,7 @@ class HintDropoutCollator:
         for item in batch:
             q = item['question']
             b = item['hints']
-            c = item['']
+            c = item['ref_solution']
 
             use_hint = random.random() < p_hint
         
@@ -313,6 +313,7 @@ def main():
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
         task_type="CAUSAL_LM",
         bias="none",
+        modules_to_save=["embed_tokens", "lm_head"] 
     )
     model = get_peft_model(model, peft_config)
     

@@ -20,8 +20,8 @@ class TakeExam:
 
         print(exam_result_json_path)
         self.BATCH_SIZE = 8  
-        self.MAX_NEW_TOKENS = 3072
-        self.MAX_SEQ_LENGTH = 4096
+        self.MAX_NEW_TOKENS = 15368
+        self.MAX_SEQ_LENGTH = 16000
     
         self.LOCAL_MODEL_PATH = model_path
         self.OUTPUT_JSON_PATH = exam_result_json_path
@@ -47,7 +47,48 @@ class TakeExam:
         self.tokenizer.padding_side = "left" 
 
 
+    def answer_single_question(self, question):
+        try:
+            q_text = str(question)
+            prompt = self.tokenizer.apply_chat_template(
+                [{"role": "user", "content": q_text}],
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            inputs = self.tokenizer(
+                prompt,
+                return_tensors="pt",
+                truncation=True,
+                max_length=self.MAX_SEQ_LENGTH
+            ).to(self.model.device)
+            
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=self.MAX_NEW_TOKENS,
+                    pad_token_id=self.tokenizer.pad_token_id,
+                    do_sample=True,
+                    temperature=0.1,
+                    top_p=0.9,
+                    use_cache=True
+                )
+            
+            input_ids_len = inputs["input_ids"].shape[1]
+            generated_text = self.tokenizer.decode(
+                outputs[0, input_ids_len:],
+                skip_special_tokens=True
+            )
+            
+            return generated_text.strip()
+            
+        except Exception as e:
+            print(f"[Error] Failed to answer question: {e}")
+            if "out of memory" in str(e):
+                torch.cuda.empty_cache()
+            return ""
 
+
+  
 
 
     def exam(self, question, solution, answer, question_idx):
