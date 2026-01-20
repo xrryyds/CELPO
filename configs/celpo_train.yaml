@@ -38,7 +38,7 @@ grpo:
 
 # 数据集配置
 data:
-#   max_samples: 500             # 调试时设小一点，正式训练设大
+  max_samples: 500             # 调试时设小一点，正式训练设大
   train_split: ""
   num_workers: 4
 

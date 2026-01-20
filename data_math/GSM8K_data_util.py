@@ -12,13 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class GSM8K():
-    def __init__(self):
-        dataset_loader = LoadDataset(
-            dataset_name='gsm8k',
-            split='train',
-            local_path='./datasets/data/gsm8k',
-            config='main'
-        )
+    def __init__(self, train:bool=True):
+        if train:
+            dataset_loader = LoadDataset(
+                dataset_name='gsm8k',
+                split='train',
+                local_path='./datasets/data/gsm8k',
+                config='main'
+            )
+        else:
+            dataset_loader = LoadDataset(
+                dataset_name='gsm8k',
+                split='test',
+                local_path='./datasets/data/gsm8k_testpythp',
+                config='main'
+            ) 
 
         self.problems, self.solutions, self.answers, self.data_len = self.extract_data(
             dataset_loader.get_dataset())
@@ -55,7 +63,7 @@ class GSM8K():
         return problems, solutions, answers, len(problems)
             
 def main():
-   gms8k = GSM8K()
+   gms8k = GSM8K(False)
    print("problems:" + gms8k.problems[0])
    print("train_answer:" + gms8k.answers[0])
    print("solution:"+ gms8k.solutions[0])

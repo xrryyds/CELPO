@@ -124,17 +124,32 @@ def student_first_take_exam_Gsm8k():
         question_idx.append(idx)
     take_exam.exam(question, solution, answer, question_idx)
 
+
+
+def student_take_exam_Gsm8k_test():
+    gsm8k = GSM8K(False)
+    question = gsm8k.problems
+    solution = gsm8k.solutions
+    answer = gsm8k.answers
+    print(f"dataset_len_check: {len(question)} {len(solution)} {len(answer)}")
+    take_exam = TakeExam("/root/project/data/xrr/Qwen/Qwen2.5-Math-7B-Instruct")
+    question_idx = []
+    for idx in range(len(question)):
+        question_idx.append(idx)
+    print(take_exam.exam_test(question, solution, answer, question_idx))
+
+
 if __name__ == "__main__":
     # #1. student first take exam
     # student_first_take_exam()
     # #2. teacher judges and gives hints
     teacher = TeacherCorrecter()
     # teacher.teacher_mark_paper_with_save()
+    # student_first_take_exam_Gsm8k()
     # teacher.teacher_hints()
     # student_correct()
     #3. teacher correct
-    print(single_qusestion("Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?")
-)
-
+    # student_first_take_exam_Gsm8k()
+    student_take_exam_Gsm8k_test()
 
 
