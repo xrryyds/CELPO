@@ -178,123 +178,141 @@ class TakeExam:
 
 
 
-def compute_shannon_entropy(logits_sequence, normalize=True):
-    if len(logits_sequence.shape) == 3:
-        entropies = []
-        for single_logits in logits_sequence:
-            entropy = compute_shannon_entropy(single_logits, normalize)
-            entropies.append(entropy)
-        return np.array(entropies)
-    
-    L, vocab_size = logits_sequence.shape
-    
-    probs = torch.softmax(logits_sequence, dim=-1)  
-    
-    log_probs = torch.log(probs + 1e-10) 
-    step_entropies = -torch.sum(probs * log_probs, dim=-1)  
-    
-    avg_entropy = torch.mean(step_entropies).item()
-    
-    if normalize:
-        max_entropy = np.log(vocab_size)
-        normalized_entropy = avg_entropy / max_entropy
-        return normalized_entropy
-    
-    return avg_entropy
+    def compute_shannon_entropy(self, logits_sequence, normalize=True):
+        if len(logits_sequence.shape) == 3:
+            entropies = []
+            for single_logits in logits_sequence:
+                entropy = self.compute_shannon_entropy(single_logits, normalize)
+                entropies.append(entropy)
+            return np.array(entropies)
+        
+        L, vocab_size = logits_sequence.shape
+        
+        probs = torch.softmax(logits_sequence, dim=-1)  
+        
+        log_probs = torch.log(probs + 1e-10) 
+        step_entropies = -torch.sum(probs * log_probs, dim=-1)  
+        
+        avg_entropy = torch.mean(step_entropies).item()
+        
+        if normalize:
+            max_entropy = np.log(vocab_size)
+            normalized_entropy = avg_entropy / max_entropy
+            return normalized_entropy
+        
+        return avg_entropy
 
 
-def exam(self, question, solution, answer, question_idx):
-    results = []
-    total_batches = (len(question) + self.BATCH_SIZE - 1) // self.BATCH_SIZE
-    
-    for i in tqdm(range(0, len(question), self.BATCH_SIZE), total=total_batches, desc="Inferencing"):
-        batch_questions = question[i:i+self.BATCH_SIZE]
-        batch_ref_answers = answer[i:i+self.BATCH_SIZE]
-        batch_ref_solution = solution[i:i+self.BATCH_SIZE]
-        batch_question_idx = question_idx[i:i+self.BATCH_SIZE]
+    def exam(self, question, solution, answer, question_idx):
+        results = []
+        total_batches = (len(question) + self.BATCH_SIZE - 1) // self.BATCH_SIZE
+        
+        for i in tqdm(range(0, len(question), self.BATCH_SIZE), total=total_batches, desc="Inferencing"):
+            batch_questions = question[i:i+self.BATCH_SIZE]
+            batch_ref_answers = answer[i:i+self.BATCH_SIZE]
+            batch_ref_solution = solution[i:i+self.BATCH_SIZE]
+            batch_question_idx = question_idx[i:i+self.BATCH_SIZE]
 
-        try:
-            batch_prompts = []
-            for q in batch_questions:
-                q_text = str(q)
-                prompt = self.tokenizer.apply_chat_template(
-                    [{"role": "user", "content": q_text}],
-                    tokenize=False,
-                    add_generation_prompt=True
-                )
-                batch_prompts.append(prompt)
+            try:
+                batch_prompts = []
+                for q in batch_questions:
+                    q_text = str(q)
+                    prompt = self.tokenizer.apply_chat_template(
+                        [{"role": "user", "content": q_text}],
+                        tokenize=False,
+                        add_generation_prompt=True
+                    )
+                    batch_prompts.append(prompt)
 
-            inputs = self.tokenizer(
-                batch_prompts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=self.MAX_SEQ_LENGTH
-            ).to(self.model.device)
+                inputs = self.tokenizer(
+                    batch_prompts,
+                    return_tensors="pt",
+                    padding=True,
+                    truncation=True,
+                    max_length=self.MAX_SEQ_LENGTH
+                ).to(self.model.device)
 
-            with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=self.MAX_NEW_TOKENS,
-                    pad_token_id=self.tokenizer.pad_token_id,
-                    do_sample=True,
-                    temperature=0.1, 
-                    top_p=0.9,
-                    use_cache=True,
-                    output_scores=True,  
-                    return_dict_in_generate=True  
-                )
+                with torch.inference_mode():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=self.MAX_NEW_TOKENS,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        do_sample=True,
+                        temperature=0.1, 
+                        top_p=0.9,
+                        use_cache=True
+                        # output_scores=True,  # 🔧 注释掉：不计算 entropy
+                        # return_dict_in_generate=True  # 🔧 注释掉：不需要返回字典
+                    )
 
-            input_ids_len = inputs["input_ids"].shape[1]
-            
-            generated_sequences = outputs.sequences[:, input_ids_len:]
-            
-            decoded_outputs = self.tokenizer.batch_decode(
-                generated_sequences, 
-                skip_special_tokens=True
-            )
-            
-            if outputs.scores:
-                scores_tensor = torch.stack(outputs.scores, dim=1)  # (batch, L, |V|)
-                entropies = compute_shannon_entropy(scores_tensor, normalize=True)
-            else:
-                entropies = [None] * len(decoded_outputs)
-
-            for idx, generated_text in enumerate(decoded_outputs):
-                results.append({
-                    "question": batch_questions[idx],
-                    "answer": generated_text.strip(),
-                    "ref_answer": batch_ref_answers[idx].strip(),
-                    "ref_solution": batch_ref_solution[idx].strip(),
-                    "question_idx": batch_question_idx[idx],
-                    "entropy": float(entropies[idx]) if entropies[idx] is not None else None
-                })
+                input_ids_len = inputs["input_ids"].shape[1]
                 
-            if (i // self.BATCH_SIZE) % 10 == 0:
-                with open(self.OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
-                    json.dump(results, f, ensure_ascii=False, indent=2)
+                # 🔧 修改：直接使用 outputs（现在是 tensor 而不是字典）
+                generated_sequences = outputs[:, input_ids_len:]
+                
+                decoded_outputs = self.tokenizer.batch_decode(
+                    generated_sequences, 
+                    skip_special_tokens=True
+                )
+                
+                # 🔧 注释掉：不计算 entropy
+                # if outputs.scores:
+                #     scores_tensor = torch.stack(outputs.scores, dim=1)  # (batch, L, |V|)
+                #     entropies = self.compute_shannon_entropy(scores_tensor, normalize=True)
+                # else:
+                #     entropies = [None] * len(decoded_outputs)
 
-        except Exception as e:
-            print(f"\n[Error] Batch {i//self.BATCH_SIZE} failed: {e}")
-            if "out of memory" in str(e):
-                print("显存不足提示: 如果 BS=8 依然 OOM，请改回 4。")
-            torch.cuda.empty_cache()
-            continue
+                for idx, generated_text in enumerate(decoded_outputs):
+                    results.append({
+                        "question": batch_questions[idx],
+                        "answer": generated_text.strip(),
+                        "ref_answer": batch_ref_answers[idx].strip(),
+                        "ref_solution": batch_ref_solution[idx].strip(),
+                        "question_idx": batch_question_idx[idx]
+                        # "entropy": float(entropies[idx]) if entropies[idx] is not None else None  # 🔧 注释掉
+                    })
+                    
+                if (i // self.BATCH_SIZE) % 10 == 0:
+                    with open(self.OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
+                        json.dump(results, f, ensure_ascii=False, indent=2)
 
-    # 最终保存
-    with open(self.OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    
-    # 打印统计信息
-    valid_entropies = [r['entropy'] for r in results if r['entropy'] is not None]
-    if valid_entropies:
-        print(f"\nEntropy Statistics:")
-        print(f"  Mean: {np.mean(valid_entropies):.4f}")
-        print(f"  Std:  {np.std(valid_entropies):.4f}")
-        print(f"  Min:  {np.min(valid_entropies):.4f}")
-        print(f"  Max:  {np.max(valid_entropies):.4f}")
-    
-    print(f"Done! Results saved to {self.OUTPUT_JSON_PATH}")
+            except Exception as e:
+                print(f"\n[Error] Batch {i//self.BATCH_SIZE} failed: {e}")
+                if "out of memory" in str(e):
+                    print("显存不足提示: 如果 BS=8 依然 OOM，请改回 4。")
+                torch.cuda.empty_cache()
+                continue
+
+        # 最终保存
+        with open(self.OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
+        
+        # 🔧 注释掉：entropy 统计
+        # valid_entropies = [r['entropy'] for r in results if r['entropy'] is not None]
+        # if valid_entropies:
+        #     print(f"\nEntropy Statistics:")
+        #     print(f"  Mean: {np.mean(valid_entropies):.4f}")
+        #     print(f"  Std:  {np.std(valid_entropies):.4f}")
+        #     print(f"  Min:  {np.min(valid_entropies):.4f}")
+        #     print(f"  Max:  {np.max(valid_entropies):.4f}")
+        
+        print(f"Done! Results saved to {self.OUTPUT_JSON_PATH}")
+
+
+        # 最终保存
+        with open(self.OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
+        
+        # 打印统计信息
+        # valid_entropies = [r['entropy'] for r in results if r['entropy'] is not None]
+        # if valid_entropies:
+        #     print(f"\nEntropy Statistics:")
+        #     print(f"  Mean: {np.mean(valid_entropies):.4f}")
+        #     print(f"  Std:  {np.std(valid_entropies):.4f}")
+        #     print(f"  Min:  {np.min(valid_entropies):.4f}")
+        #     print(f"  Max:  {np.max(valid_entropies):.4f}")
+        
+        print(f"Done! Results saved to {self.OUTPUT_JSON_PATH}")
 
 
 if __name__ == "__main__":

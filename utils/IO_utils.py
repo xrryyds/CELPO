@@ -66,10 +66,10 @@ class FileIOUtils:
         ref_solution = []
         student_answer = []
         for idx, item in enumerate(data):
-            hints = item.get("hints", "")
-            if(hints != ""):
+            hint = item.get("hints", "")
+            if(hint != ""):
                 question.append(item.get("question", ""))
-                hints.append(hints)
+                hints.append(hint)
                 ref_answer.append(item.get("ref_answer", ""))
                 ref_solution.append(item.get("ref_solution", ""))
                 question_idx.append(item.get("question_idx", ""))

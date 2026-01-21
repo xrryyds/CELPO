@@ -146,8 +146,8 @@ if __name__ == "__main__":
     teacher = TeacherCorrecter()
     # teacher.teacher_mark_paper_with_save()
     # student_first_take_exam_Gsm8k()
-    teacher.teacher_hints()
-    # student_correct()
+    # teacher.teacher_hints()
+    student_correct()
     #3. teacher correct
     # student_first_take_exam_Gsm8k()
     # student_take_exam_Gsm8k_test()

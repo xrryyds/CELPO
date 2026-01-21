@@ -53,7 +53,7 @@ def extract_boxed_content(text: str) -> Optional[str]:
     
     if matches:
         return matches[-1].strip()
-    return None
+    return ""
 
 def normalize_answer(answer: str) -> str:
     if answer is None: return ""
