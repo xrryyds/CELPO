@@ -66,12 +66,14 @@ class FileIOUtils:
         ref_solution = []
         student_answer = []
         for idx, item in enumerate(data):
-            question.append(item.get("question", ""))
-            hints.append(item.get("hints", ""))
-            ref_answer.append(item.get("ref_answer", ""))
-            ref_solution.append(item.get("ref_solution", ""))
-            question_idx.append(item.get("question_idx", ""))
-            student_answer.append(item.get("student_answer",""))
+            hints = item.get("hints", "")
+            if(hints != ""):
+                question.append(item.get("question", ""))
+                hints.append(hints)
+                ref_answer.append(item.get("ref_answer", ""))
+                ref_solution.append(item.get("ref_solution", ""))
+                question_idx.append(item.get("question_idx", ""))
+                student_answer.append(item.get("student_answer",""))
 
         for idx in range(len(question)):
             question_with_hint.append(GEN_ENHANCE_PROMPT.format(question=question[idx], hints=hints[idx]))
