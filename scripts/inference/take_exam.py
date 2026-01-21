@@ -7,6 +7,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 from transformers import set_seed 
+from utils import FileIOUtils, extract_hints ,extract_boxed_content, normalize_answer
 
 
 class TakeExam:
@@ -140,32 +141,20 @@ class TakeExam:
                 # === 计算准确率部分 ===
                 for idx, generated_text in enumerate(decoded_outputs):
                     # 获取模型生成结果和参考答案
-                    pred_answer = generated_text.strip()
+                    pred_answer = extract_boxed_content(generated_text)
                     ref_answer = str(batch_ref_answers[idx]).strip()
-
-                    # -------------------------------------------------------
-                    # 【重要提示】此处为判分逻辑，请根据具体数据集调整
-                    # -------------------------------------------------------
-                    # 方案 A: 严格全等匹配 (适用于答案非常标准的场景)
-                    is_correct = (pred_answer == ref_answer)
+                    pred_answer = normalize_answer(pred_answer)
+                    ref_answer = normalize_answer(ref_answer)
                     
-                    # 方案 B: 包含匹配 (适用于选择题，模型输出可能包含 "Answer is A")
-                    # is_correct = (ref_answer in pred_answer)
-
-                    # 方案 C: 如果是数学题，通常需要在此处写正则提取数字
-                    # match = re.search(r"boxed\{(.*?)\}", pred_answer)
-                    # extracted = match.group(1) if match else ""
-                    # is_correct = (extracted == ref_answer)
-                    # -------------------------------------------------------
-
+                    is_correct = (pred_answer == ref_answer)
                     if is_correct:
                         correct_count += 1
                     
                     total_count += 1
                 
                 # 实时打印当前进度准确率 (可选)
-                # current_acc = correct_count / total_count if total_count > 0 else 0
-                # print(f"Batch {i//self.BATCH_SIZE} done. Current Acc: {current_acc:.2%}")
+                current_acc = correct_count / total_count if total_count > 0 else 0
+                print(f"Batch {i//self.BATCH_SIZE} done. Current Acc: {current_acc:.2%}")
 
             except Exception as e:
                 print(f"\n[Error] Batch {i//self.BATCH_SIZE} failed: {e}")
