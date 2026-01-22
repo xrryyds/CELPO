@@ -9,7 +9,7 @@ exam_paper = FileIOUtils()
 
 def student_correct():
     exam_paper.load_question_with_hints()
-    question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
+    question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer, hints = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
     student_exam = TakeExam()
     student_exam.exam(question_with_hint, ref_solution, ref_answer ,question_idx)
 
@@ -19,16 +19,17 @@ def student_correct():
     err_idx_set = set(err_question_idx)
     correct_group = []
     incorrect_group = []
-    total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer)
+    total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer, hints)
 
-    for q_id, q, q_hint, r_sol, r_ans, s_ans in total_data:
+    for q_id, q, q_hint, r_sol, r_ans, s_ans, s_hint in total_data:
         item = {
             "question_idx": q_id,
             "question": q,
             "question_with_hints": q_hint, 
             "ref_solution": r_sol,
             "ref_answer": r_ans,
-            "student_answer": s_ans
+            "student_answer": s_ans,
+            "hints": s_hint
         }
         
         if q_id in err_idx_set:
@@ -41,7 +42,7 @@ def student_correct():
         data_for_teacher_grpo .append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "hints": extract_KNOWN(item["question_with_hints"]),
+            "hints": item["hints"],
             "student_answer": item["student_answer"],
             "success": True
         })
@@ -50,7 +51,7 @@ def student_correct():
         data_for_teacher_grpo.append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "hints": extract_KNOWN(item["question_with_hints"]),
+            "hints": item["hints"],
             "student_answer": item["student_answer"],
             "success": False
         })
@@ -60,18 +61,19 @@ def student_correct():
         data_for_student_adv_hints.append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "hints": extract_KNOWN(item["question_with_hints"]),
+            "hints": item["hints"],
             "student_answer": item["student_answer"],
             "ref_solution": item["ref_solution"],
             "ref_answer": item["ref_answer"]
         })
 
+
     data_for_student_disadv_hints = [] 
-    for item in correct_group:
+    for item in incorrect_group:
         data_for_student_disadv_hints.append({
             "question_idx": item["question_idx"],
             "question": item["question"],
-            "hints": extract_KNOWN(item["question_with_hints"]),
+            "hints": item["hints"],
             "student_answer": item["student_answer"],
             "ref_solution": item["ref_solution"],
             "ref_answer": item["ref_answer"]
