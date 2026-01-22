@@ -12,7 +12,7 @@ import numpy as np
 
 
 class TakeExam:
-    def __init__(self,  model_path: str =  "/root/project/data/xrr/OREAL-7B"):
+    def __init__(self,  model_path: str = "/root/autodl-tmp/model/Qwen/Qwen/Qwen2.5-Math-7B-Instruct"):
         
         current_file_path = os.path.abspath(__file__)
         project_root = os.path.dirname(os.path.dirname(current_file_path)) 
@@ -21,7 +21,7 @@ class TakeExam:
         set_seed(42)
 
         print(exam_result_json_path)
-        self.BATCH_SIZE = 8  
+        self.BATCH_SIZE = 32  
         self.MAX_NEW_TOKENS = 4096
         self.MAX_SEQ_LENGTH = 6000
     

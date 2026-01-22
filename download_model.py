@@ -19,7 +19,7 @@ MY_TOKEN = ""
 print("开始下载模型...")
 snapshot_download(
     repo_id="Qwen/Qwen2.5-7B-Instruct",
-    local_dir="/root/project/data/xrr/Qwen/Qwen2.5-7B-Instruct",
+    local_dir="/root/project/data/xrr/Qwen/Qwen2.5-Math-7B-Instruct",
     max_workers=8,
     token=MY_TOKEN  # <--- 加上这一行
 )
