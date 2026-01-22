@@ -22,7 +22,6 @@ from transformers import (
     set_seed
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-# 假设 prompt.py 中有这些模板，如果没有请根据实际情况调整
 from prompt import GEN_PROMPT, GEN_HINTS_WIH_ANSWER, GEN_ENHANCE_PROMPT
 
 # ==========================================
@@ -31,11 +30,11 @@ from prompt import GEN_PROMPT, GEN_HINTS_WIH_ANSWER, GEN_ENHANCE_PROMPT
 
 @dataclass
 class HintSFTConfig:
-    p_hint_start: float = 0.95     # 论文 eq.5: p_start
-    p_hint_end: float = 0.10       # 论文 eq.5: p_end
-    hint_fixed_weight: float = 2.0 # Mode B中Hint的固定权重 (论文提及强调生成)
-    gate_threshold: float = 2.5    # 论文 eq.7: mu (Passing grade)
-    gate_slope: float = 3.0        # 论文 eq.7: kappa (Sensitivity)
+    p_hint_start: float = 0.95    
+    p_hint_end: float = 0.10      
+    hint_fixed_weight: float = 1.0 
+    gate_threshold: float = 2.5    
+    gate_slope: float = 3.0       
     debug_sample_steps: int = 50
 
 logger = logging.getLogger(__name__)
@@ -71,9 +70,6 @@ def log_environment(args, output_dir):
     with open(os.path.join(output_dir, "training_args.json"), "w", encoding='utf-8') as f:
         json.dump(args.to_dict(), f, indent=4)
 
-# ==========================================
-# 3. 核心 Collator (对齐 Data Replay & IRDCL)
-# ==========================================
 class HintDropoutCollator:
     def __init__(self, tokenizer, hint_config: HintSFTConfig, max_length: int = 4096):
         self.tokenizer = tokenizer

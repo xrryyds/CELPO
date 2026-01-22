@@ -3,7 +3,7 @@ from scripts import TakeExam, TeacherCorrecter
 from utils import FileIOUtils, remove_null_hints
 from configs import GRPOConfig
 from data_math import Math_500, GSM8K
-from utils import extract_KNOWN
+from utils import extract_KNOWN, filter_json_by_question_idx
 
 exam_paper = FileIOUtils()
 
@@ -77,11 +77,9 @@ def student_correct():
             "ref_answer": item["ref_answer"]
         })   
     
-    current_file_path = os.path.abspath(__file__)
-    project_root = os.path.dirname(os.path.dirname(current_file_path)) 
-    adv_hints_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "adv_hints.json")
-    disadv_hints_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "disadv_hints.json")
-    grpo_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "grpo_data.json")
+    adv_hints_dataset_path = exam_paper.adv_hints_dataset_path
+    disadv_hints_dataset_path = exam_paper.disadv_hints_dataset_path
+    grpo_dataset_path = exam_paper.grpo_dataset_path
 
     exam_paper.save_results_to_json(data_for_teacher_grpo, grpo_dataset_path)
     exam_paper.save_results_to_json(data_for_student_adv_hints,  adv_hints_dataset_path)
@@ -94,6 +92,7 @@ def teacher_correct():
     teacher.teacher_mark_paper_with_save()
     teacher.teacher_hints()
     remove_null_hints(exam_paper.hints_file_path)
+    filter_json_by_question_idx(exam_paper.exam_file_path, exam_paper.hints_file_path, exam_paper.corr_path)
     del teacher
 
 def single_qusestion(qusetion):
@@ -160,7 +159,8 @@ if __name__ == "__main__":
     # teacher.teacher_mark_paper_with_save()
     # student_first_take_exam_Gsm8k()
     # teacher.teacher_hints()
-    student_correct()
+    # student_correct()
+    filter_json_by_question_idx(exam_paper.exam_file_path, exam_paper.hints_file_path, exam_paper.corr_path)
     #3. teacher correct
     # student_first_take_exam_Gsm8k()
     # student_take_exam_Gsm8k_test()

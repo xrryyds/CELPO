@@ -12,5 +12,6 @@ __all__= [
     "extract_hints",
     "extract_KNOWN",
     "extract_answer",
-    "remove_null_hints"
+    "remove_null_hints",
+    "filter_json_by_question_idx"
 ]

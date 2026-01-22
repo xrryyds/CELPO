@@ -11,6 +11,16 @@ class FileIOUtils:
         self.hints_file_path = os.path.join(project_root, "datasets", "exam", "hints.json")
         self.student_correct_output_path = os.path.join(project_root, "datasets", "exam", "correct.json")
 
+
+
+
+        self.adv_hints_dataset_path = os.path.join(project_root, "datasets", "exam", "adv_hints.json")
+        self.disadv_hints_dataset_path = os.path.join(project_root, "datasets", "exam", "disadv_hints.json")
+        self.grpo_dataset_path = os.path.join(project_root, "datasets", "exam", "grpo_data.json")
+        self.corr_path = os.path.join(project_root, "datasets", "exam", "corr_answer.json")
+    
+
+
         self.data = []
         self.mistakes = []
         self.question_with_hints = []
