@@ -10,37 +10,28 @@ exam_paper = FileIOUtils()
 def student_correct():
     # gen question with hints
     exam_paper.load_question_with_hints()
-    # 获取原始题目列表
     question_idx, question, question_with_hint, ref_solution, ref_answer, _, hints = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
    
-    # student taken exam with hints
+
     student_exam = TakeExam()
-    # 建议：exam 方法最好有返回值，或者确认它是否只修改内部状态
     student_exam.exam(question_with_hint, ref_solution, ref_answer, question_idx)
 
     # teacher correct
     teacher = TeacherCorrecter()
     
-    # 获取判卷结果
     incorrect_data, correct_data = teacher.teacher_mark_paper()
     
-    # 1. 解包逻辑 (确保 Teacher 类返回的是 5 元组)
     err_question_idx, _, err_answers, _, _  = incorrect_data
     correct_question_idx, _, correct_answers, _, _ = correct_data
 
-    # 2. 构建 ID 映射 (关键修复：统一转换为字符串，防止 int/str 不匹配)
     answers_map = {}
     
-    # 使用 Set 进行 O(1) 查找，同时记录正确和错误的 ID
-    # 关键修复：确保将 ID 统一转为 str 以防万一
     correct_idx_set = set(str(x) for x in correct_question_idx)
     err_idx_set = set(str(x) for x in err_question_idx)
     
-    # 填入正确题目的答案
     for q_id, s_ans in zip(correct_question_idx, correct_answers):
         answers_map[str(q_id)] = s_ans
         
-    # 填入错误题目的答案
     for q_id, s_ans in zip(err_question_idx, err_answers):
         answers_map[str(q_id)] = s_ans
 
@@ -50,9 +41,8 @@ def student_correct():
     total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, hints)
 
     for q_id, q, q_hint, r_sol, r_ans, s_hint in total_data:
-        str_qid = str(q_id) # 统一 ID 类型
+        str_qid = str(q_id) 
         
-        # 关键修复：先判断是否在 map 中，如果没有，说明该题被跳过或 crash 了
         if str_qid not in answers_map:
             print(f"Warning: Question ID {q_id} missing from exam results. Skipping.")
             continue
