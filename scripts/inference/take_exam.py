@@ -21,7 +21,7 @@ class TakeExam:
         set_seed(42)
 
         print(exam_result_json_path)
-        self.BATCH_SIZE = 32  
+        self.BATCH_SIZE = 64  
         self.MAX_NEW_TOKENS = 4096
         self.MAX_SEQ_LENGTH = 6000
     

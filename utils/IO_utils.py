@@ -87,7 +87,7 @@ class FileIOUtils:
 
         for idx in range(len(question)):
             question_with_hint.append(GEN_ENHANCE_PROMPT.format(question=question[idx], hints=hints[idx]))
-        return question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer
+        return question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer, hints
 
     def save_hints(self, question: list, hints: list, ref_solution: list, ref_answer: list, question_idx: list,student_answer: list) -> bool:
         try:

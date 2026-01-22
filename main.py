@@ -65,12 +65,8 @@ def student_correct():
         elif str_qid in correct_idx_set:
             correct_group.append(item)
         else:
-            # 理论上不应该到这里，因为前面检查了 answers_map
-            # 但作为防御性编程，记录日志
             print(f"Error: Question ID {q_id} has answer but not classified in err/correct sets.")
             continue
-
-    # --- 以下数据构建部分逻辑基本正确，无需大改 ---
     
     data_for_teacher_grpo = []
     for item in correct_group:
@@ -201,8 +197,8 @@ if __name__ == "__main__":
     # teacher.teacher_mark_paper_with_save()
     # student_first_take_exam_Gsm8k()
     # teacher.teacher_hints()
-    # student_correct()
-    filter_json_by_question_idx(exam_paper.exam_file_path, exam_paper.hints_file_path, exam_paper.corr_path)
+    student_correct()
+    # filter_json_by_question_idx(exam_paper.exam_file_path, exam_paper.hints_file_path, exam_paper.corr_path)
     #3. teacher correct
     # student_first_take_exam_Gsm8k()
     # student_take_exam_Gsm8k_test()
