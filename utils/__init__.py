@@ -1,4 +1,4 @@
-from .data_utils import extract_KNOWN ,extract_answer, extract_conclusion,extract_reason,extract_thinking, normalize_answer, collate_fn, extract_hints,extract_boxed_content
+from .data_utils import *
 from .IO_utils import FileIOUtils
 
 __all__= [
@@ -11,5 +11,6 @@ __all__= [
     "FileIOUtils",
     "extract_hints",
     "extract_KNOWN",
-    "extract_answer"
+    "extract_answer",
+    "remove_null_hints"
 ]

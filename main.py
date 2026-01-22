@@ -1,6 +1,6 @@
 import os
 from scripts import TakeExam, TeacherCorrecter
-from utils import FileIOUtils
+from utils import FileIOUtils, remove_null_hints
 from configs import GRPOConfig
 from data_math import Math_500, GSM8K
 from utils import extract_KNOWN
@@ -13,67 +13,79 @@ def student_correct():
     student_exam = TakeExam()
     student_exam.exam(question_with_hint, ref_solution, ref_answer ,question_idx)
 
-    # teacher = TeacherCorrecter()
-    # err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers = teacher.teacher_mark_paper()
-    # exam_paper.save_mistakes(err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers)
+    teacher = TeacherCorrecter()
+    err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers = teacher.teacher_mark_paper()
 
-    # err_idx_set = set(err_question_idx)
-    # correct_group = []
-    # incorrect_group = []
-    # total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer)
+    err_idx_set = set(err_question_idx)
+    correct_group = []
+    incorrect_group = []
+    total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer)
 
-    # for q_id, q, q_hint, r_sol, r_ans, s_ans in total_data:
-    #     item = {
-    #         "question_idx": q_id,
-    #         "question": q,
-    #         "question_with_hints": q_hint, 
-    #         "ref_solution": r_sol,
-    #         "ref_answer": r_ans,
-    #         "student_answer": s_ans
-    #     }
+    for q_id, q, q_hint, r_sol, r_ans, s_ans in total_data:
+        item = {
+            "question_idx": q_id,
+            "question": q,
+            "question_with_hints": q_hint, 
+            "ref_solution": r_sol,
+            "ref_answer": r_ans,
+            "student_answer": s_ans
+        }
         
-    #     if q_id in err_idx_set:
-    #         incorrect_group.append(item)
-    #     else:
-    #         correct_group.append(item)
+        if q_id in err_idx_set:
+            incorrect_group.append(item)
+        else:
+            correct_group.append(item)
 
-    # data_for_teacher_grpo = []
-    # for item in correct_group:
-    #     data_for_teacher_grpo .append({
-    #         "question_idx": item["question_idx"],
-    #         "question": item["question"],
-    #         "hints": extract_KNOWN(item["question_with_hints"]),
-    #         "student_answer": item["student_answer"],
-    #         "success": True
-    #     })
+    data_for_teacher_grpo = []
+    for item in correct_group:
+        data_for_teacher_grpo .append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
+            "student_answer": item["student_answer"],
+            "success": True
+        })
         
-    # for item in incorrect_group:
-    #     data_for_teacher_grpo.append({
-    #         "question_idx": item["question_idx"],
-    #         "question": item["question"],
-    #         "hints": extract_KNOWN(item["question_with_hints"]),
-    #         "student_answer": item["student_answer"],
-    #         "success": False
-    #     })
+    for item in incorrect_group:
+        data_for_teacher_grpo.append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
+            "student_answer": item["student_answer"],
+            "success": False
+        })
     
-    # data_for_student_celpo = []
-    # for item in correct_group:
-    #     data_for_student_celpo.append({
-    #         "question_idx": item["question_idx"],
-    #         "question": item["question"],
-    #         "hints": extract_KNOWN(item["question_with_hints"]),
-    #         "student_answer": item["student_answer"],
-    #         "ref_solution": item["ref_solution"],
-    #         "ref_answer": item["ref_answer"]
-    #     })
-    
-    # current_file_path = os.path.abspath(__file__)
-    # project_root = os.path.dirname(os.path.dirname(current_file_path)) 
-    # celpo_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "adv_hints.json")
-    # grpo_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "grpo_data.json")
+    data_for_student_adv_hints = []
+    for item in correct_group:
+        data_for_student_adv_hints.append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
+            "student_answer": item["student_answer"],
+            "ref_solution": item["ref_solution"],
+            "ref_answer": item["ref_answer"]
+        })
 
-    # exam_paper.save_results_to_json(data_for_teacher_grpo, grpo_dataset_path)
-    # exam_paper.save_results_to_json(data_for_student_celpo, celpo_dataset_path)
+    data_for_student_disadv_hints = [] 
+    for item in correct_group:
+        data_for_student_disadv_hints.append({
+            "question_idx": item["question_idx"],
+            "question": item["question"],
+            "hints": extract_KNOWN(item["question_with_hints"]),
+            "student_answer": item["student_answer"],
+            "ref_solution": item["ref_solution"],
+            "ref_answer": item["ref_answer"]
+        })   
+    
+    current_file_path = os.path.abspath(__file__)
+    project_root = os.path.dirname(os.path.dirname(current_file_path)) 
+    adv_hints_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "adv_hints.json")
+    disadv_hints_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "disadv_hints.json")
+    grpo_dataset_path = os.path.join(project_root, "CELPO", "datasets", "exam", "grpo_data.json")
+
+    exam_paper.save_results_to_json(data_for_teacher_grpo, grpo_dataset_path)
+    exam_paper.save_results_to_json(data_for_student_adv_hints,  adv_hints_dataset_path)
+    exam_paper.save_results_to_json(data_for_student_disadv_hints, disadv_hints_dataset_path)
 
 
 
@@ -81,6 +93,7 @@ def teacher_correct():
     teacher = TeacherCorrecter()
     teacher.teacher_mark_paper_with_save()
     teacher.teacher_hints()
+    remove_null_hints(exam_paper.hints_file_path)
     del teacher
 
 def single_qusestion(qusetion):
@@ -143,7 +156,7 @@ if __name__ == "__main__":
     # #1. student first take exam
     # student_first_take_exam()
     # #2. teacher judges and gives hints
-    teacher = TeacherCorrecter()
+    # teacher = TeacherCorrecter()
     # teacher.teacher_mark_paper_with_save()
     # student_first_take_exam_Gsm8k()
     # teacher.teacher_hints()
@@ -151,5 +164,6 @@ if __name__ == "__main__":
     #3. teacher correct
     # student_first_take_exam_Gsm8k()
     # student_take_exam_Gsm8k_test()
+    # remove_null_hints(exam_paper.hints_file_path)
 
 
