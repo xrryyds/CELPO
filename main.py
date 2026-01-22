@@ -8,20 +8,57 @@ from utils import extract_KNOWN, filter_json_by_question_idx
 exam_paper = FileIOUtils()
 
 def student_correct():
+    # gen question with hints
     exam_paper.load_question_with_hints()
-    question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer, hints = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
+    # 获取原始题目列表
+    question_idx, question, question_with_hint, ref_solution, ref_answer, _, hints = exam_paper.parse_hints_exam(exam_paper.question_with_hints)
+   
+    # student taken exam with hints
     student_exam = TakeExam()
-    student_exam.exam(question_with_hint, ref_solution, ref_answer ,question_idx)
+    # 建议：exam 方法最好有返回值，或者确认它是否只修改内部状态
+    student_exam.exam(question_with_hint, ref_solution, ref_answer, question_idx)
 
+    # teacher correct
     teacher = TeacherCorrecter()
-    err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers = teacher.teacher_mark_paper()
+    
+    # 获取判卷结果
+    incorrect_data, correct_data = teacher.teacher_mark_paper()
+    
+    # 1. 解包逻辑 (确保 Teacher 类返回的是 5 元组)
+    err_question_idx, _, err_answers, _, _  = incorrect_data
+    correct_question_idx, _, correct_answers, _, _ = correct_data
 
-    err_idx_set = set(err_question_idx)
+    # 2. 构建 ID 映射 (关键修复：统一转换为字符串，防止 int/str 不匹配)
+    answers_map = {}
+    
+    # 使用 Set 进行 O(1) 查找，同时记录正确和错误的 ID
+    # 关键修复：确保将 ID 统一转为 str 以防万一
+    correct_idx_set = set(str(x) for x in correct_question_idx)
+    err_idx_set = set(str(x) for x in err_question_idx)
+    
+    # 填入正确题目的答案
+    for q_id, s_ans in zip(correct_question_idx, correct_answers):
+        answers_map[str(q_id)] = s_ans
+        
+    # 填入错误题目的答案
+    for q_id, s_ans in zip(err_question_idx, err_answers):
+        answers_map[str(q_id)] = s_ans
+
     correct_group = []
     incorrect_group = []
-    total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, student_answer, hints)
+    
+    total_data = zip(question_idx, question, question_with_hint, ref_solution, ref_answer, hints)
 
-    for q_id, q, q_hint, r_sol, r_ans, s_ans, s_hint in total_data:
+    for q_id, q, q_hint, r_sol, r_ans, s_hint in total_data:
+        str_qid = str(q_id) # 统一 ID 类型
+        
+        # 关键修复：先判断是否在 map 中，如果没有，说明该题被跳过或 crash 了
+        if str_qid not in answers_map:
+            print(f"Warning: Question ID {q_id} missing from exam results. Skipping.")
+            continue
+
+        s_ans = answers_map[str_qid]
+
         item = {
             "question_idx": q_id,
             "question": q,
@@ -32,14 +69,22 @@ def student_correct():
             "hints": s_hint
         }
         
-        if q_id in err_idx_set:
+        # 严格分类逻辑
+        if str_qid in err_idx_set:
             incorrect_group.append(item)
-        else:
+        elif str_qid in correct_idx_set:
             correct_group.append(item)
+        else:
+            # 理论上不应该到这里，因为前面检查了 answers_map
+            # 但作为防御性编程，记录日志
+            print(f"Error: Question ID {q_id} has answer but not classified in err/correct sets.")
+            continue
 
+    # --- 以下数据构建部分逻辑基本正确，无需大改 ---
+    
     data_for_teacher_grpo = []
     for item in correct_group:
-        data_for_teacher_grpo .append({
+        data_for_teacher_grpo.append({
             "question_idx": item["question_idx"],
             "question": item["question"],
             "hints": item["hints"],
@@ -67,7 +112,6 @@ def student_correct():
             "ref_answer": item["ref_answer"]
         })
 
-
     data_for_student_disadv_hints = [] 
     for item in incorrect_group:
         data_for_student_disadv_hints.append({
@@ -83,9 +127,15 @@ def student_correct():
     disadv_hints_dataset_path = exam_paper.disadv_hints_dataset_path
     grpo_dataset_path = exam_paper.grpo_dataset_path
 
+    # 建议：添加 print 确认保存的数据量，方便调试
+    print(f"Saving {len(data_for_teacher_grpo)} GRPO samples.")
+    print(f"Saving {len(data_for_student_adv_hints)} Advantageous Hint samples.")
+    print(f"Saving {len(data_for_student_disadv_hints)} Disadvantageous Hint samples.")
+
     exam_paper.save_results_to_json(data_for_teacher_grpo, grpo_dataset_path)
     exam_paper.save_results_to_json(data_for_student_adv_hints,  adv_hints_dataset_path)
     exam_paper.save_results_to_json(data_for_student_disadv_hints, disadv_hints_dataset_path)
+
 
 
 

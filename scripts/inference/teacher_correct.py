@@ -81,22 +81,12 @@ class TeacherCorrecter:
         self.teacher_mark_paper_with_save()
         self.teacher_hints()
         
-    def get_question_with_hints(self):
-        print("load question with hints...")
-        self.file.load_question_with_hints()
-        h_question, h_ref_solution, h_ref_answer = self.file.parse_hints_exam(self.file.question_with_hints)
-        return h_question, h_ref_solution, h_ref_answer
-    
 
     def teacher_mark_paper(self):
         print("Starting teacher marking...")
         self.file.load_exam()
         question_idx, question, answer, ref_answer, ref_solution = self.file.parse_data(self.file.data)
         size = len(question)
-        # client = OpenAI(
-        #     base_url = base_url,
-        #     api_key = api_key,
-        # )
 
         self.acc_count = 0
         self.err_count = 0
@@ -108,14 +98,25 @@ class TeacherCorrecter:
         err_ref_solutions = []
         err_ref_answers = []
         
+        correct_question_idx = []
+        correct_questions = []
+        correct_answers = []
+        correct_ref_solutions = []
+        correct_ref_answers = []
+        
         print("----- standard request -----")
         for idx in range(size):
             final_answer = extract_boxed_content(answer[idx])
             final_answer = normalize_answer(final_answer)
             ref_final_answer = normalize_answer(ref_answer[idx])
-            # 如果答案直接匹配，跳过 API 请求
+            
             if final_answer == ref_final_answer:
                 self.acc_count += 1
+                correct_question_idx.append(question_idx[idx])
+                correct_questions.append(question[idx])
+                correct_answers.append(answer[idx])
+                correct_ref_solutions.append(ref_solution[idx])
+                correct_ref_answers.append(ref_answer[idx])
             else:
                 self.err_count += 1
                 err_question_idx.append(question_idx[idx])
@@ -123,56 +124,19 @@ class TeacherCorrecter:
                 err_answers.append(answer[idx])
                 err_ref_solutions.append(ref_solution[idx])
                 err_ref_answers.append(ref_answer[idx])
-                # # 原有的休眠逻辑保留
-                # if idx % 20 == 0:
-                #     print(f"sleep in idx：{idx}")
-                #     time.sleep(10)                
-                # continue
-            
-            # prompt = OREAL_CORRECT_PROMPT.format(
-            #     question=question[idx],
-            #     gold_answer=ref_answer[idx],
-            #     answer=answer[idx]
-            # )
-
-            # response = None
-            # while True:
-            #     try:
-            #         completion = client.chat.completions.create(
-            #             model="app-7c54im-1766977238437488331",
-            #             messages=[
-            #                 {"role": "system", "content": "You are a helpful assistant who good at math"},
-            #                 {"role": "user", "content": prompt},
-            #             ],
-            #         )
-            #         response = completion.choices[0].message.content
-            #         break 
-                
-            #     except openai.RateLimitError:
-            #         print(f"Rate limit reached at idx {idx}. Sleeping for 20 seconds...")
-            #         time.sleep(20)
-            #     except Exception as e:
-            #         print(f"An unexpected error occurred at idx {idx}: {e}")
-            #         raise e
-
-            # if response.strip().lower() == "a":
-            #     self.acc_count += 1
-            # else:
-            #     self.err_count += 1
-            #     err_question_idx.append(question_idx[idx])
-            #     err_questions.append(question[idx])
-            #     err_answers.append(answer[idx])
-            #     err_ref_solutions.append(ref_solution[idx])
-            #     err_ref_answers.append(ref_answer[idx])
             
             if idx % 5 == 0:
                 left = size - idx
                 print(f"finished: {idx}, left: {left}, acc:{self.acc_count}, err:{self.err_count}, toolong:{self.toolong_count}")
             
-                
         print(f"Accuracy: {self.acc_count}/{size}")
         print(f"Error count: {self.err_count}")
-        return err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers
+        
+        return (
+            (err_question_idx, err_questions, err_answers, err_ref_solutions, err_ref_answers),
+            (correct_question_idx, correct_questions, correct_answers, correct_ref_solutions, correct_ref_answers)
+        )
+
 
     
 # if __name__ == "__main__":
